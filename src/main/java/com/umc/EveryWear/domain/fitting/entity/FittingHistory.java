@@ -1,6 +1,6 @@
 package com.umc.EveryWear.domain.fitting.entity;
 
-import com.umc.EveryWear.domain.member.entity.Member;
+import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,8 +21,8 @@ public class FittingHistory {
     private Long fittingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

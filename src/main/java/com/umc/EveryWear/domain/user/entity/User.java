@@ -1,23 +1,23 @@
-package com.umc.EveryWear.domain.member.entity;
+package com.umc.EveryWear.domain.user.entity;
 
-import com.umc.EveryWear.domain.member.enums.MemberStatus;
-import com.umc.EveryWear.domain.member.enums.SocialType;
+import com.umc.EveryWear.domain.user.enums.UserStatus;
+import com.umc.EveryWear.domain.user.enums.SocialType;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "member")
+@Table(name = "user")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Member extends BaseEntity {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_id")
-    private Long memberId;
+    @Column(name = "user_id")
+    private Long userId;
 
     @Column(name = "oauth_id", nullable = false)
     private String oauthId;
@@ -37,7 +37,7 @@ public class Member extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "is_active", nullable = false)
-    private MemberStatus isActive;
+    private UserStatus isActive;
 
     @Column(name = "refresh_token", nullable = false)
     private String refreshToken;
