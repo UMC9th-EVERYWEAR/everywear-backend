@@ -1,11 +1,11 @@
 package com.umc.EveryWear.domain.alarm.entity;
 
-import com.umc.EveryWear.domain.member.entity.Member;
+import com.umc.EveryWear.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "alram")
+@Table(name = "alarm")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,8 +18,8 @@ public class Alarm {
     private Long notificationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
     private String content;

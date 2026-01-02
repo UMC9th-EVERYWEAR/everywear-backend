@@ -1,15 +1,15 @@
-package com.umc.EveryWear.domain.member.entity;
+package com.umc.EveryWear.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "memberImg")
+@Table(name = "userImg")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class MemberImg {
+public class UserImg {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,8 +17,8 @@ public class MemberImg {
     private Long profileImageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
