@@ -10,9 +10,19 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI swagger() {
-        Info info = new Info().title("Every Wear API").description("Every Wear 백엔드 API 문서").version("v1.0.0");
-
         return new OpenAPI()
-                .info(info);
+                .info(new Info()
+                        .title("Every Wear API")
+                        .description("Every Wear 백엔드 API 문서")
+                        .version("v1.0.0"))
+                .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("bearerAuth"))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new io.swagger.v3.oas.models.security.SecurityScheme()
+                                        .name("bearerAuth")
+                                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                        ));
     }
 }
