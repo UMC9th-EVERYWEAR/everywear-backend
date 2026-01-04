@@ -2,6 +2,7 @@ package com.umc.EveryWear.domain.user.controller;
 
 import com.umc.EveryWear.domain.user.dto.UserResponse;
 import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import com.umc.EveryWear.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,12 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
 
+    private final UserRepository userRepository;
+
     @Operation(summary = "내 정보 조회", description = "현재 로그인한 사용자의 정보를 조회합니다.")
     @GetMapping("/me")
     public ApiResponse<UserResponse> getMyInfo(
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal Long userId
     ) {
-        UserResponse userResponse = UserResponse.from(user);
+        UserResponse userResponse = UserResponse.from(userId, userRepository);
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, userResponse);
     }
 }

@@ -3,8 +3,10 @@ package com.umc.EveryWear.domain.user.dto;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.enums.SocialType;
 import com.umc.EveryWear.domain.user.enums.UserStatus;
+import com.umc.EveryWear.domain.user.repository.UserRepository;
 import lombok.Builder;
 import lombok.Getter;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +23,10 @@ public class UserResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static UserResponse from(User user) {
+    public static UserResponse from(Long userId, UserRepository userRepository) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
         return UserResponse.builder()
                 .userId(user.getUserId())
                 .name(user.getName())
