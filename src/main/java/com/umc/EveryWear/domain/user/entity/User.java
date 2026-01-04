@@ -11,7 +11,6 @@ import lombok.*;
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class User extends BaseEntity {
 
     @Id
@@ -47,4 +46,25 @@ public class User extends BaseEntity {
 
     @Column(name = "alarm_onoff", nullable = false)
     private Boolean alarmOnoff;
+
+    @Builder
+    public User(Long userId, String oauthId, String name, String password, String email,
+                SocialType socialType, UserStatus isActive, String refreshToken,
+                Boolean isAgreed, Boolean alarmOnoff) {
+        this.userId = userId;
+        this.oauthId = oauthId;
+        this.name = name;
+        this.password = password;
+        this.email = email;
+        this.socialType = socialType;
+        this.isActive = isActive;
+        this.refreshToken = refreshToken;
+        this.isAgreed = isAgreed;
+        this.alarmOnoff = alarmOnoff;
+    }
+
+    // Refresh Token 업데이트 메서드
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
 }
