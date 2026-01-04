@@ -3,6 +3,7 @@ package com.umc.EveryWear.global.security;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.domain.user.service.CustomOAuth2User;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // Refresh Token 업데이트 (Dirty Checking으로 자동 업데이트됨)
         savedUser.updateRefreshToken(refreshToken);
 
-        log.info("OAuth2 Login Success - User: {}, AccessToken generated", savedUser.getEmail());
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);   // 로컬은 false, HTTPS 운영은 true
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
+        response.addCookie(refreshCookie);
+
 
         // 테스트용: 토큰을 단순 HTML 페이지로 표시
         response.setContentType("text/html; charset=UTF-8");

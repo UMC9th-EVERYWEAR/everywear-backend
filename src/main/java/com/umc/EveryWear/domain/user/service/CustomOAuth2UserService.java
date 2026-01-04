@@ -57,7 +57,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .oauthId(kakaoUserInfo.getOauthId())
                     .name(kakaoUserInfo.getNickname())
                     .email(kakaoUserInfo.getEmail())
-                    .password("") // OAuth 사용자는 비밀번호 불필요
                     .socialType(SocialType.KAKAO)
                     .isActive(UserStatus.ACTIVE)
                     .refreshToken("")

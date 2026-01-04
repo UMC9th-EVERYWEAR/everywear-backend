@@ -35,7 +35,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/oauth2/**",
                                 "/login/**",
-                                "/oauth/callback/**"  // 콜백 URL 허용
+                                "/auth/**",
+                                "/api/auth/refresh",
+                                "/oauth/callback/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
