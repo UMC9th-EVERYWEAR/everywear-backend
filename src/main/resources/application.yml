@@ -16,3 +16,12 @@ spring:
 
 server:
   port: 8080
+
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION}
+    s3:
+      bucket: ${S3_BUCKET}
+    credentials:
+      instance-profile: true  # ECS Task Role 사용
