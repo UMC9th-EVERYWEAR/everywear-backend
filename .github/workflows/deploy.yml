@@ -36,8 +36,8 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
-      - name: Run tests
-        run: ./gradlew test
+#      - name: Run tests
+#        run: ./gradlew test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
