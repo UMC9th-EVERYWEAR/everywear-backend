@@ -88,6 +88,7 @@ jobs:
             S3_BUCKET=${{ secrets.S3_BUCKET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
 
       # ECS 배포
       - name: Deploy to Amazon ECS

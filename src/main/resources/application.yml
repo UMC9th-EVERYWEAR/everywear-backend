@@ -53,3 +53,8 @@ logging:
   level:
     com.umc.EveryWear: INFO
     org.springframework: WARN
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 3600000  # 1시간
+  refresh-token-expiration: 604800000  # 7일
