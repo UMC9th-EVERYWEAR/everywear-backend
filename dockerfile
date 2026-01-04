@@ -1,5 +1,5 @@
 # 멀티스테이지 빌드
-FROM gradle:8.5-jdk21-alpine AS builder
+FROM gradle:9.2.1-jdk21-alpine AS builder
 
 WORKDIR /app
 
