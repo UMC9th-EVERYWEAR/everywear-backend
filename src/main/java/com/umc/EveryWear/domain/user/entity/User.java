@@ -24,6 +24,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String password;
+
     @Column
     private String email;
 
@@ -45,12 +48,13 @@ public class User extends BaseEntity {
     private Boolean alarmOnoff;
 
     @Builder
-    public User(Long userId, String oauthId, String name, String email,
+    public User(Long userId, String oauthId, String name, String password, String email,
                 SocialType socialType, UserStatus isActive, String refreshToken,
                 Boolean isAgreed, Boolean alarmOnoff) {
         this.userId = userId;
         this.oauthId = oauthId;
         this.name = name;
+        this.password = password;
         this.email = email;
         this.socialType = socialType;
         this.isActive = isActive;

@@ -2,10 +2,9 @@ package com.umc.EveryWear.domain.fitting.entity;
 
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "fittingHistory")
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class FittingHistory {
+public class FittingHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,8 +33,5 @@ public class FittingHistory {
     @Column(name = "is_liked", nullable = false)
     @Builder.Default
     private Boolean isLiked = false;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 }
 
