@@ -112,23 +112,22 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setPrice(jsonNode.has("price") ? 
                     jsonNode.get("price").asText() : "-");
             
-            // 별점 처리
-            // 별점을 숫자 또는 문자열("-") 이라 처리 필요
+            // 별점 처리 (null 허용)
             if (jsonNode.has("star_point") && !jsonNode.get("star_point").isNull()) {
                 JsonNode starPointNode = jsonNode.get("star_point");
                 if (starPointNode.isNumber()) {
                     data.setStarPoint((float) starPointNode.asDouble());
-                } else if (starPointNode.isTextual() && !starPointNode.asText().equals("-")) {
+                } else if (starPointNode.isTextual()) {
                     try {
                         data.setStarPoint(Float.parseFloat(starPointNode.asText()));
                     } catch (NumberFormatException e) {
-                        data.setStarPoint(0.0f);
+                        data.setStarPoint(null);
                     }
                 } else {
-                    data.setStarPoint(0.0f);
+                    data.setStarPoint(null);
                 }
             } else {
-                data.setStarPoint(0.0f);
+                data.setStarPoint(null);
             }
             
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
