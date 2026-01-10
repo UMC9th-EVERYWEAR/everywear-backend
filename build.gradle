@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.1'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'idea'
 }
 
 group = 'com.umc'
@@ -36,6 +37,7 @@ dependencies {
 
 	// OAuth2 Login
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-core'
 
 	// Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -61,6 +63,9 @@ dependencies {
 
 	// JSoup (HTML 파싱)
 	implementation 'org.jsoup:jsoup:1.17.2'
+
+	// WebClient (HTTP Client for FastAPI)
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 
