@@ -2,20 +2,33 @@ package com.umc.EveryWear.domain.auth.service;
 
 import com.umc.EveryWear.domain.auth.dto.TokenRefreshResponse;
 import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.enums.UserStatus;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.global.security.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+
+    @Value("${kakao.admin-key}")
+    private String kakaoAdminKey;
 
     /**
      * refreshToken(쿠키) -> 검증 -> accessToken 재발급
@@ -57,13 +70,103 @@ public class AuthService {
         return new TokenRefreshResponse(newAccessToken);
     }
 
+    /**
+     * 로그아웃
+     * - RefreshToken 무효화
+     * - 쿠키 삭제
+     */
+    @Transactional
+    public void logout(Long userId, HttpServletResponse response) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        // RefreshToken 무효화
+        user.updateRefreshToken("");
+
+        // 쿠키 삭제
+        clearRefreshTokenCookie(response);
+
+        log.info("User {} logged out successfully", user.getEmail());
+    }
+
+    /**
+     * 회원 탈퇴
+     * - 카카오 연결 끊기
+     * - 사용자 상태를 DELETED로 변경 (또는 실제 삭제)
+     * - 쿠키 삭제
+     */
+    @Transactional
+    public void withdraw(Long userId, HttpServletResponse response) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        try {
+            // 카카오 연결 끊기 시도
+            unlinkKakao(user.getOauthId());
+            log.info("Kakao unlink successful for user: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to unlink Kakao account for user: {}", user.getEmail(), e);
+            // 카카오 연결 끊기 실패해도 회원 탈퇴는 진행 (선택사항)
+        }
+
+        // 사용자 상태를 DELETED로 변경 (Soft Delete)
+        user.updateStatus(UserStatus.DELETED);
+        user.updateRefreshToken("");
+
+        // 쿠키 삭제
+        clearRefreshTokenCookie(response);
+
+        // 실제로 DB에서 삭제하려면:
+        // userRepository.delete(user);
+
+        log.info("User {} withdrew successfully", user.getEmail());
+    }
+
+    /**
+     * 카카오 연결 끊기 (회원 탈퇴 시)
+     */
+    private void unlinkKakao(String oauthId) {
+        String url = "https://kapi.kakao.com/v1/user/unlink";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.set("Authorization", "KakaoAK " + kakaoAdminKey);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("target_id_type", "user_id");
+        params.add("target_id", oauthId);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            ResponseEntity<Map> responseEntity = restTemplate.postForEntity(url, request, Map.class);
+
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                log.info("Kakao unlink API response: {}", responseEntity.getBody());
+            }
+        } catch (Exception e) {
+            log.error("Kakao unlink API failed", e);
+            throw new RuntimeException("Failed to unlink Kakao account");
+        }
+    }
+
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(false); // 로컬이면 false, 운영(https)이면 true 추천
         cookie.setPath("/");
-        // cookie.setDomain("your-domain.com"); // 운영 시 필요하면 설정
-        cookie.setMaxAge(60 * 60 * 24 * 14); // 14일 (원하면 yml 값으로 빼도 됨)
+        cookie.setMaxAge(60 * 60 * 24 * 14); // 14일
+        response.addCookie(cookie);
+    }
+
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // 즉시 삭제
         response.addCookie(cookie);
     }
 }

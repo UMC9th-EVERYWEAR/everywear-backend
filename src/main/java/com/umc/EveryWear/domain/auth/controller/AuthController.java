@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Auth", description = "인증 관련 API")
@@ -25,6 +26,26 @@ public class AuthController {
         String refreshToken = extractCookieValue(request, "refreshToken");
         TokenRefreshResponse result = authService.refresh(refreshToken, response);
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, result);
+    }
+
+    @Operation(summary = "로그아웃", description = "사용자를 로그아웃하고 RefreshToken을 무효화합니다.")
+    @PostMapping("/logout")
+    public ApiResponse<String> logout(
+            @AuthenticationPrincipal Long userId,
+            HttpServletResponse response
+    ) {
+        authService.logout(userId, response);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, "로그아웃이 완료되었습니다.");
+    }
+
+    @Operation(summary = "회원 탈퇴", description = "사용자 계정을 삭제하고 카카오 연결을 끊습니다.")
+    @DeleteMapping("/withdraw")
+    public ApiResponse<String> withdraw(
+            @AuthenticationPrincipal Long userId,
+            HttpServletResponse response
+    ) {
+        authService.withdraw(userId, response);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, "회원 탈퇴가 완료되었습니다.");
     }
 
     private String extractCookieValue(HttpServletRequest request, String name) {

@@ -63,4 +63,9 @@ public class User extends BaseEntity {
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
+    // 사용자 상태 변경 메서드
+    public void updateStatus(UserStatus status) {
+        this.isActive = status;
+    }
 }
