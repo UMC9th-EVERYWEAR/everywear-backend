@@ -87,7 +87,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .body(BodyInserters.fromValue(requestBody))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(60)) // 크롤링은 시간이 걸릴 수 있으므로 60초 타임아웃
+                    .timeout(Duration.ofSeconds(120)) // 크롤링은 시간이 걸릴 수 있으므로 120초 타임아웃
                     .block();
             
             log.debug("FastAPI 응답: {}", responseJson);
