@@ -45,7 +45,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .orElse(null);
             
             if (existingProduct != null) {
-                return ProductConverter.toCrawlingDTO(existingProduct);
+                // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
+                productRepository.updateUpdatedAt(existingProduct.getProductId());
+                // 업데이트 후 다시 조회하여 최신 정보 반환
+                Product updatedProduct = productRepository.findById(existingProduct.getProductId())
+                        .orElse(existingProduct);
+                return ProductConverter.toCrawlingDTO(updatedProduct);
             }
 
             // 크롤링 수행
