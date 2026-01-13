@@ -40,8 +40,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     @Override
     public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportDTO dto) {
         try {
+            // 2차 URL 형식 검증(이중 보호 처리)
+            String productUrl = dto.getProduct_url();
+            if (productUrl == null || !productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$")) {
+                throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
+            }
+            
             // 이미 등록된 상품인지 확인
-            Product existingProduct = productRepository.findByProductUrl(dto.getProduct_url())
+            Product existingProduct = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
             if (existingProduct != null) {
