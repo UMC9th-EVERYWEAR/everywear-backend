@@ -4,5 +4,5 @@ import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 
 public interface ProductCommandService {
-    ProductResDTO.CrawlingDTO crawlAndSaveMusinsaProduct(ProductReqDTO.CrawlingDTO dto);
+    ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportDTO dto);
 }

@@ -12,7 +12,7 @@ public class ProductReqDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class CrawlingDTO {
+    public static class ImportDTO {
         @NotBlank(message = "상품 URL은 필수입니다.")
         private String product_url;
     }

@@ -24,12 +24,12 @@ public class ProductController {
     private final ProductCommandService productCommandService;
 
     @Operation(summary = "무신사 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
-    @PostMapping("/crawling/musinsa")
-    public ApiResponse<ProductResDTO.CrawlingDTO> crawlMusinsaProduct(
+    @PostMapping("/import/musinsa")
+    public ApiResponse<ProductResDTO.ImportDTO> importMusinsaProduct(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.CrawlingDTO dto
+            @Valid @RequestBody ProductReqDTO.ImportDTO dto
     ) {
-        ProductResDTO.CrawlingDTO response = productCommandService.crawlAndSaveMusinsaProduct(dto);
+        ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(dto);
         return ApiResponse.onSuccess(ProductSuccessCode.MUSINSA_PRODUCT_ADDED, response);
     }
 }

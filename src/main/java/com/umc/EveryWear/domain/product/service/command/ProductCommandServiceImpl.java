@@ -38,7 +38,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private String fastApiBaseUrl;
 
     @Override
-    public ProductResDTO.CrawlingDTO crawlAndSaveMusinsaProduct(ProductReqDTO.CrawlingDTO dto) {
+    public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportDTO dto) {
         try {
             // 이미 등록된 상품인지 확인
             Product existingProduct = productRepository.findByProductUrl(dto.getProduct_url())
@@ -50,7 +50,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 // 업데이트 후 다시 조회하여 최신 정보 반환
                 Product updatedProduct = productRepository.findById(existingProduct.getProductId())
                         .orElse(existingProduct);
-                return ProductConverter.toCrawlingDTO(updatedProduct);
+                return ProductConverter.toImportDTO(updatedProduct);
             }
 
             // 크롤링 수행
@@ -71,7 +71,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
 
-            return ProductConverter.toCrawlingDTO(savedProduct);
+            return ProductConverter.toImportDTO(savedProduct);
 
         } catch (Exception e) {
             log.error("무신사 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);

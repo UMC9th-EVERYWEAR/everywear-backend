@@ -5,9 +5,9 @@ import com.umc.EveryWear.domain.product.entity.Product;
 
 public class ProductConverter {
 
-    // Entity -> DTO (크롤링 응답)
-    public static ProductResDTO.CrawlingDTO toCrawlingDTO(Product product) {
-        return ProductResDTO.CrawlingDTO.builder()
+    // Entity -> DTO (상품 등록 응답)
+    public static ProductResDTO.ImportDTO toImportDTO(Product product) {
+        return ProductResDTO.ImportDTO.builder()
                 .product_id(product.getProductId())
                 .shoppingmale_name(product.getShoppingmallName())
                 .product_url(product.getProductUrl())
