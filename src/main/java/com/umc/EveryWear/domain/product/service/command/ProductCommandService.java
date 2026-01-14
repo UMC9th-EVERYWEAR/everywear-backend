@@ -5,4 +5,5 @@ import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 
 public interface ProductCommandService {
     ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportDTO dto);
+    ProductResDTO.ImportDTO importZigzagProduct(ProductReqDTO.ImportZigzagDTO dto);
 }
