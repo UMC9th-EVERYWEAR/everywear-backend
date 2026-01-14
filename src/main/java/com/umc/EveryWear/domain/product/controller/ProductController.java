@@ -32,4 +32,14 @@ public class ProductController {
         ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(dto);
         return ApiResponse.onSuccess(ProductSuccessCode.MUSINSA_PRODUCT_ADDED, response);
     }
+
+    @Operation(summary = "29cm 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
+    @PostMapping("/import/29cm")
+    public ApiResponse<ProductResDTO.ImportDTO> import29cmProduct(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ProductReqDTO.Import29cmDTO dto
+    ) {
+        ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(dto);
+        return ApiResponse.onSuccess(ProductSuccessCode.CM29_PRODUCT_ADDED, response);
+    }
 }

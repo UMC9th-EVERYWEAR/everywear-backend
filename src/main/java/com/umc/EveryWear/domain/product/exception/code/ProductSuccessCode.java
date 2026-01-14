@@ -12,6 +12,9 @@ public enum ProductSuccessCode implements BaseSuccessCode {
     MUSINSA_PRODUCT_ADDED(HttpStatus.OK,
             "200",
             "무신사 상품을 추가했습니다."),
+    CM29_PRODUCT_ADDED(HttpStatus.OK,
+            "200",
+            "29cm 상품을 추가했습니다."),
     ;
 
     private final HttpStatus status;
