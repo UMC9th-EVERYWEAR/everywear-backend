@@ -88,6 +88,7 @@ jobs:
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             KAKAO_ADMIN_KEY=${{ secrets.KAKAO_ADMIN_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            FASTAPI_BASE_URL=http://crawler.everywear.local:8001
 
       # ECS 배포
       - name: Deploy to Amazon ECS

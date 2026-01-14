@@ -1,9 +1,8 @@
 package com.umc.EveryWear.domain.product.entity;
 
+import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product")
@@ -11,34 +10,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Product {
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
     private Long productId;
 
+    @Column(name = "shoppingmall_name", nullable = false)
+    private String shoppingmallName;
+
     @Column(name = "product_url", nullable = false)
     private String productUrl;
 
-    @Column(name = "product_name", nullable = false)
-    private String productName;
-
-    @Column
-    private String brand;
-
     @Column(nullable = false)
-    private Integer price;
-
-    @Column(nullable = false)
-    private Float star;
+    private String category;
 
     @Column(name = "product_img_url", nullable = false)
     private String productImgUrl;
 
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @Column(name = "brand_name", nullable = false)
+    private String brandName;
+
+    @Column(nullable = false)
+    private String price;
+
+    @Column(name = "star_point", nullable = true)
+    private Float starPoint;
+
     @Column(name = "AI_review", columnDefinition = "TEXT")
     private String aiReview;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 }
