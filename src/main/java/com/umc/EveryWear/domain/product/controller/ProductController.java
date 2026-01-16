@@ -41,5 +41,21 @@ public class ProductController {
     ) {
         ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(dto);
         return ApiResponse.onSuccess(ProductSuccessCode.ZIGZAG_PRODUCT_ADDED, response);
+    @Operation(summary = "W컨셉 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
+    @PostMapping("/import/wconcept")
+    public ApiResponse<ProductResDTO.ImportDTO> importWconceptProduct(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ProductReqDTO.WconceptImportDTO dto
+    ) {
+        ProductResDTO.ImportDTO response = productCommandService.importWconceptProduct(dto);
+        return ApiResponse.onSuccess(ProductSuccessCode.WCONCEPT_PRODUCT_ADDED, response);
+    @Operation(summary = "29cm 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
+    @PostMapping("/import/29cm")
+    public ApiResponse<ProductResDTO.ImportDTO> import29cmProduct(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ProductReqDTO.Import29cmDTO dto
+    ) {
+        ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(dto);
+        return ApiResponse.onSuccess(ProductSuccessCode.CM29_PRODUCT_ADDED, response);
     }
 }
