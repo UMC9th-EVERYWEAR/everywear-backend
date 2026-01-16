@@ -33,6 +33,14 @@ public class ProductController {
         return ApiResponse.onSuccess(ProductSuccessCode.MUSINSA_PRODUCT_ADDED, response);
     }
 
+    @Operation(summary = "지그재그 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
+    @PostMapping("/import/zigzag")
+    public ApiResponse<ProductResDTO.ImportDTO> importZigzagProduct(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ProductReqDTO.ImportZigzagDTO dto
+    ) {
+        ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(dto);
+        return ApiResponse.onSuccess(ProductSuccessCode.ZIGZAG_PRODUCT_ADDED, response);
     @Operation(summary = "W컨셉 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
     @PostMapping("/import/wconcept")
     public ApiResponse<ProductResDTO.ImportDTO> importWconceptProduct(
