@@ -38,7 +38,7 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private String price;
 
-    @Column(name = "star_point", nullable = true)
+    @Column(name = "star_point")
     private Float starPoint;
 
     @Column(name = "AI_review", columnDefinition = "TEXT")
