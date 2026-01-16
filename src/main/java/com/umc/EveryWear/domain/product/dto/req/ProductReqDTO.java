@@ -31,4 +31,15 @@ public class ProductReqDTO {
         @Schema(description = "29cm 상품 URL", example = "https://www.29cm.co.kr/products/3401549?categoryLargeCode=268100100&categoryMediumCode=268105100&categorySmallCode=")
         private String product_url;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WconceptImportDTO {
+        @NotBlank(message = "상품 URL은 필수입니다.")
+        @Pattern(regexp = "^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$", message = "지원되지 않는 url 형식입니다")
+        @Schema(description = "W컨셉 상품 URL", example = "https://www.wconcept.co.kr/Product/306170405?entry_channel=all_category&cate_no=001006&cate_nm=%ED%8C%AC%EC%B8%A0&cate_sort=")
+        private String product_url;
+    }
 }
