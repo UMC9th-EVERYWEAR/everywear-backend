@@ -418,7 +418,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$") ||
+                    productUrl.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
