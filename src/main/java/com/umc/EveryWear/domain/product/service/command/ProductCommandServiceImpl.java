@@ -42,7 +42,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^(https://www\\.musinsa\\.com/products/\\d+$|https://musinsa\\.onelink\\.me/.*)$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$") ||
+                    productUrl.matches("^https://musinsa\\.onelink\\.me/[^/]+/[^/]+.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
@@ -161,7 +165,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://zigzag\\.kr/catalog/products/\\d+$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://zigzag\\.kr/catalog/products/\\d+$") ||
+                    productUrl.matches("^https://s\\.zigzag\\.kr/[A-Za-z0-9]+$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
@@ -286,7 +294,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^(https://www\\.29cm\\.co\\.kr/products/\\d+.*|https://29cm\\.onelink\\.me/.*)$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*$") ||
+                    productUrl.matches("^https://29cm\\.onelink\\.me/.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
