@@ -16,7 +16,7 @@ public class ProductReqDTO {
     @AllArgsConstructor
     public static class ImportDTO {
         @NotBlank(message = "상품 URL은 필수입니다.")
-        @Pattern(regexp = "^https://www\\.musinsa\\.com/products/\\d+$", message = "지원되지 않는 url 형식입니다")
+        @Pattern(regexp = "^(https://www\\.musinsa\\.com/products/\\d+$|https://musinsa\\.onelink\\.me/.*)$", message = "지원되지 않는 url 형식입니다")
         @Schema(description = "무신사 상품 URL", example = "https://www.musinsa.com/products/5797789")
         private String product_url;
     }

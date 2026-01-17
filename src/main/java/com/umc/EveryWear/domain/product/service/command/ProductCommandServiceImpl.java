@@ -42,7 +42,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$")) {
+            if (productUrl == null || !productUrl.matches("^(https://www\\.musinsa\\.com/products/\\d+$|https://musinsa\\.onelink\\.me/.*)$")) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
