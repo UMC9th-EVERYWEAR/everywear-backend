@@ -6,12 +6,14 @@ import com.umc.EveryWear.domain.product.exception.code.ProductSuccessCode;
 import com.umc.EveryWear.domain.product.service.command.ProductCommandService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,10 +29,18 @@ public class ProductController {
     @PostMapping("/import/musinsa")
     public ApiResponse<ProductResDTO.ImportDTO> importMusinsaProduct(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.ImportDTO dto
+            @Valid @RequestBody ProductReqDTO.ImportMusinsaDTO dto
     ) {
         ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(dto);
-        return ApiResponse.onSuccess(ProductSuccessCode.MUSINSA_PRODUCT_ADDED, response);
+        ProductSuccessCode successCode;
+        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
+            successCode = ProductSuccessCode.MUSINSA_PRODUCT_URL_UPDATED;
+        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
+            successCode = ProductSuccessCode.MUSINSA_PRODUCT_UPDATED;
+        } else {
+            successCode = ProductSuccessCode.MUSINSA_PRODUCT_ADDED;
+        }
+        return ApiResponse.onSuccess(successCode, response);
     }
 
     @Operation(summary = "지그재그 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
@@ -40,7 +50,15 @@ public class ProductController {
             @Valid @RequestBody ProductReqDTO.ImportZigzagDTO dto
     ) {
         ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(dto);
-        return ApiResponse.onSuccess(ProductSuccessCode.ZIGZAG_PRODUCT_ADDED, response);
+        ProductSuccessCode successCode;
+        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
+            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_URL_UPDATED;
+        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
+            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_UPDATED;
+        } else {
+            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_ADDED;
+        }
+        return ApiResponse.onSuccess(successCode, response);
         }
 
     @Operation(summary = "W컨셉 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
@@ -50,7 +68,15 @@ public class ProductController {
             @Valid @RequestBody ProductReqDTO.WconceptImportDTO dto
     ) {
         ProductResDTO.ImportDTO response = productCommandService.importWconceptProduct(dto);
-        return ApiResponse.onSuccess(ProductSuccessCode.WCONCEPT_PRODUCT_ADDED, response);
+        ProductSuccessCode successCode;
+        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
+            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_URL_UPDATED;
+        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
+            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_UPDATED;
+        } else {
+            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_ADDED;
+        }
+        return ApiResponse.onSuccess(successCode, response);
         }
 
     @Operation(summary = "29cm 상품 등록", description = "등록할 상품 url을 받아 DB에 상품 정보를 저장합니다.")
@@ -60,6 +86,14 @@ public class ProductController {
             @Valid @RequestBody ProductReqDTO.Import29cmDTO dto
     ) {
         ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(dto);
-        return ApiResponse.onSuccess(ProductSuccessCode.CM29_PRODUCT_ADDED, response);
+        ProductSuccessCode successCode;
+        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
+            successCode = ProductSuccessCode.CM29_PRODUCT_URL_UPDATED;
+        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
+            successCode = ProductSuccessCode.CM29_PRODUCT_UPDATED;
+        } else {
+            successCode = ProductSuccessCode.CM29_PRODUCT_ADDED;
+        }
+        return ApiResponse.onSuccess(successCode, response);
     }
 }
