@@ -286,7 +286,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*$")) {
+            if (productUrl == null || !productUrl.matches("^(https://www\\.29cm\\.co\\.kr/products/\\d+.*|https://29cm\\.onelink\\.me/.*)$")) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
