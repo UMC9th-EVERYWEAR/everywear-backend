@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -38,29 +37,46 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private String fastApiBaseUrl;
 
     @Override
-    public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportDTO dto) {
+    public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportMusinsaDTO dto) {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$") ||
+                    productUrl.matches("^https://musinsa\\.onelink\\.me/[^/]+/[^/]+.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // 이미 등록된 상품인지 확인
-            Product existingProduct = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
-            if (existingProduct != null) {
+            if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProduct.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProduct.getProductId())
-                        .orElse(existingProduct);
-                return ProductConverter.toImportDTO(updatedProduct);
+                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
+                        .orElse(existingProductByUrl);
+                return ProductConverter.toImportDTO(updatedProduct, true);
             }
 
-            // 크롤링 수행
+            // 크롤링 실행
             ProductCrawlingData crawlerData = crawlMusinsaProduct(dto.getProduct_url());
+
+            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
+            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
+                    .orElse(null);
+            
+            if (existingProductByName != null) {
+                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+                // 업데이트 후 다시 조회하여 최신 정보 반환
+                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
+                        .orElse(existingProductByName);
+                return ProductConverter.toImportDTO(updatedProduct, true, true);
+            }
 
             // Product 엔터티 생성 및 저장
             Product product = Product.builder()
@@ -161,25 +177,42 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://zigzag\\.kr/catalog/products/\\d+$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://zigzag\\.kr/catalog/products/\\d+$") ||
+                    productUrl.matches("^https://s\\.zigzag\\.kr/[A-Za-z0-9]+$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // 이미 등록된 상품인지 확인
-            Product existingProduct = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
-            if (existingProduct != null) {
+            if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProduct.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProduct.getProductId())
-                        .orElse(existingProduct);
-                return ProductConverter.toImportDTO(updatedProduct);
+                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
+                        .orElse(existingProductByUrl);
+                return ProductConverter.toImportDTO(updatedProduct, true);
             }
 
-            // 크롤링 수행
+            // 크롤링 실행
             ProductCrawlingData crawlerData = crawlZigzagProduct(dto.getProduct_url());
+
+            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
+            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
+                    .orElse(null);
+            
+            if (existingProductByName != null) {
+                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+                // 업데이트 후 다시 조회하여 최신 정보 반환
+                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
+                        .orElse(existingProductByName);
+                return ProductConverter.toImportDTO(updatedProduct, true, true);
+            }
 
             // Product 엔터티 생성 및 저장
             Product product = Product.builder()
@@ -286,25 +319,42 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*$") ||
+                    productUrl.matches("^https://29cm\\.onelink\\.me/.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // 이미 등록된 상품인지 확인
-            Product existingProduct = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
-            if (existingProduct != null) {
+            if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProduct.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProduct.getProductId())
-                        .orElse(existingProduct);
-                return ProductConverter.toImportDTO(updatedProduct);
+                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
+                        .orElse(existingProductByUrl);
+                return ProductConverter.toImportDTO(updatedProduct, true);
             }
 
-            // 크롤링 수행
+            // 크롤링 실행
             ProductCrawlingData crawlerData = crawl29cmProduct(dto.getProduct_url());
+
+            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
+            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
+                    .orElse(null);
+            
+            if (existingProductByName != null) {
+                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+                // 업데이트 후 다시 조회하여 최신 정보 반환
+                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
+                        .orElse(existingProductByName);
+                return ProductConverter.toImportDTO(updatedProduct, true, true);
+            }
 
             // Product 엔터티 생성 및 저장
             Product product = Product.builder()
@@ -406,25 +456,42 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         try {
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
-            if (productUrl == null || !productUrl.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$")) {
+            boolean isValidUrl = productUrl != null && (
+                    productUrl.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$") ||
+                    productUrl.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$")
+            );
+            if (!isValidUrl) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // 이미 등록된 상품인지 확인
-            Product existingProduct = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
-            if (existingProduct != null) {
+            if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProduct.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProduct.getProductId())
-                        .orElse(existingProduct);
-                return ProductConverter.toImportDTO(updatedProduct);
+                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
+                        .orElse(existingProductByUrl);
+                return ProductConverter.toImportDTO(updatedProduct, true);
             }
 
-            // 크롤링 수행
+            // 크롤링 실행
             ProductCrawlingData crawlerData = crawlWconceptProduct(dto.getProduct_url());
+
+            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
+            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
+                    .orElse(null);
+            
+            if (existingProductByName != null) {
+                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+                // 업데이트 후 다시 조회하여 최신 정보 반환
+                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
+                        .orElse(existingProductByName);
+                return ProductConverter.toImportDTO(updatedProduct, true, true);
+            }
 
             // Product 엔터티 생성 및 저장
             Product product = Product.builder()

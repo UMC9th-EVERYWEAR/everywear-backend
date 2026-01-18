@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByProductUrl(String productUrl);
+    Optional<Product> findByProductName(String productName);
     
     // updatedAt 내림차순으로 모든 상품 조회
     List<Product> findAllByOrderByUpdatedAtDesc();
@@ -21,4 +22,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Modifying
     @Query("UPDATE Product p SET p.updatedAt = CURRENT_TIMESTAMP WHERE p.productId = :productId")
     void updateUpdatedAt(@Param("productId") Long productId);
+    
+    // 상품 URL과 updatedAt을 업데이트
+    @Modifying
+    @Query("UPDATE Product p SET p.productUrl = :productUrl, p.updatedAt = CURRENT_TIMESTAMP WHERE p.productId = :productId")
+    void updateProductUrlAndUpdatedAt(@Param("productId") Long productId, @Param("productUrl") String productUrl);
 }
