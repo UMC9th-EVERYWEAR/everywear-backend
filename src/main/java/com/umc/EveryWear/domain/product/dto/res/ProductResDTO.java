@@ -19,6 +19,7 @@ public class ProductResDTO {
         private String price;
         private Float star_point;
         private String AI_review;
+        private String product_num;
 
         // 업데이트 여부 및 URL 업데이트 여부는 응답 포함X
         @JsonIgnore

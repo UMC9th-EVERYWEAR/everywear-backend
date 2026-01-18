@@ -10,7 +10,9 @@ import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
 import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -89,6 +91,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
@@ -159,6 +162,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
+        
             
             return data;
             
@@ -367,6 +371,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
@@ -437,6 +442,9 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
+            
+            data.setProductNum(jsonNode.has("product_num") && !jsonNode.get("product_num").isNull() ? 
+                    jsonNode.get("product_num").asText() : null);
             
             return data;
             
@@ -587,8 +595,9 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-
     // 크롤링 데이터를 담는 내부 클래스
+    @Setter
+    @Getter
     private static class ProductCrawlingData {
         private String shoppingmallName;
         private String productUrl;
@@ -599,25 +608,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         private String price;
         private Float starPoint;
         private String aiReview;
+        private String productNum;
 
-        // Getters and Setters
-        public String getShoppingmallName() { return shoppingmallName; }
-        public void setShoppingmallName(String shoppingmallName) { this.shoppingmallName = shoppingmallName; }
-        public String getProductUrl() { return productUrl; }
-        public void setProductUrl(String productUrl) { this.productUrl = productUrl; }
-        public String getCategory() { return category; }
-        public void setCategory(String category) { this.category = category; }
-        public String getProductImgUrl() { return productImgUrl; }
-        public void setProductImgUrl(String productImgUrl) { this.productImgUrl = productImgUrl; }
-        public String getProductName() { return productName; }
-        public void setProductName(String productName) { this.productName = productName; }
-        public String getBrandName() { return brandName; }
-        public void setBrandName(String brandName) { this.brandName = brandName; }
-        public String getPrice() { return price; }
-        public void setPrice(String price) { this.price = price; }
-        public Float getStarPoint() { return starPoint; }
-        public void setStarPoint(Float starPoint) { this.starPoint = starPoint; }
-        public String getAiReview() { return aiReview; }
-        public void setAiReview(String aiReview) { this.aiReview = aiReview; }
     }
 }

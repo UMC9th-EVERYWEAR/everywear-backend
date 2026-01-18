@@ -43,4 +43,7 @@ public class Product extends BaseEntity {
 
     @Column(name = "AI_review", columnDefinition = "TEXT")
     private String aiReview;
+
+    @Column(name = "product_num")
+    private String productNum;
 }
