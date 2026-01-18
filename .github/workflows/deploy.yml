@@ -87,6 +87,8 @@ jobs:
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             KAKAO_ADMIN_KEY=${{ secrets.KAKAO_ADMIN_KEY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             FASTAPI_BASE_URL=http://crawler.everywear.local:8001
 
