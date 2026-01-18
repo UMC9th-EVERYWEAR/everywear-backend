@@ -33,5 +33,9 @@ public class FittingHistory extends BaseEntity {
     @Column(name = "is_liked", nullable = false)
     @Builder.Default
     private Boolean isLiked = false;
+
+    public void toggleLike() {
+        this.isLiked = !this.isLiked;
+    }
 }
 

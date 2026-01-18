@@ -66,6 +66,9 @@ dependencies {
 
 	// WebClient (HTTP Client for FastAPI)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// google genai sdk
+	implementation 'com.google.genai:google-genai:1.0.0'
 }
 
 
