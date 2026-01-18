@@ -101,30 +101,33 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         try {
-            // 카카오 연결 끊기 시도
-            unlinkKakao(user.getOauthId());
-            log.info("Kakao unlink successful for user: {}", user.getEmail());
+            // 소셜 타입에 따라 연결 끊기
+            switch (user.getSocialType()) {
+                case KAKAO:
+                    unlinkKakao(user.getOauthId());
+                    log.info("Kakao unlink successful for user: {}", user.getEmail());
+                    break;
+                case GOOGLE:
+                    log.info("Google user withdrawal - no API call needed");
+                    break;
+            }
         } catch (Exception e) {
-            log.error("Failed to unlink Kakao account for user: {}", user.getEmail(), e);
-            // 카카오 연결 끊기 실패해도 회원 탈퇴는 진행 (선택사항)
+            log.error("Failed to unlink {} account for user: {}",
+                    user.getSocialType(), user.getEmail(), e);
         }
 
-        // 사용자 상태를 DELETED로 변경 (Soft Delete)
-        user.updateStatus(UserStatus.DELETED);
-        user.updateRefreshToken("");
+        // ✅ Hard Delete: DB에서 완전 삭제
+        userRepository.delete(user);
 
         // 쿠키 삭제
         clearRefreshTokenCookie(response);
 
-        // 실제로 DB에서 삭제하려면:
-        // userRepository.delete(user);
-
-        log.info("User {} withdrew successfully", user.getEmail());
+        log.info("User {} withdrew successfully (hard deleted)", user.getEmail());
     }
 
-    /**
-     * 카카오 연결 끊기 (회원 탈퇴 시)
-     */
+        /**
+         * 카카오 연결 끊기 (회원 탈퇴 시)
+         */
     private void unlinkKakao(String oauthId) {
         String url = "https://kapi.kakao.com/v1/user/unlink";
 
