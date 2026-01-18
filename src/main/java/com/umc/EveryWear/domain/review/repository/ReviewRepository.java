@@ -1,8 +1,19 @@
 package com.umc.EveryWear.domain.review.repository;
 
+import com.umc.EveryWear.domain.review.entity.Review;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
-public interface ReviewRepository {
+import java.util.List;
 
+@Repository
+public interface ReviewRepository extends JpaRepository<Review, Long> {
+
+    /**
+     * 특정 상품의 리뷰 내용만 조회 (AI 요약용)
+     */
+    @Query("SELECT r.reviewContact FROM Review r WHERE r.product.productId = :productId")
+    List<String> findReviewContentsByProductId(@Param("productId") Long productId);
 }

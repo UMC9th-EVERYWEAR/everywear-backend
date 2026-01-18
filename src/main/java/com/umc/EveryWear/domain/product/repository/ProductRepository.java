@@ -27,4 +27,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Modifying
     @Query("UPDATE Product p SET p.productUrl = :productUrl, p.updatedAt = CURRENT_TIMESTAMP WHERE p.productId = :productId")
     void updateProductUrlAndUpdatedAt(@Param("productId") Long productId, @Param("productUrl") String productUrl);
+
+    // AI 리뷰 업데이트
+    @Modifying
+    @Query("UPDATE Product p SET p.aiReview = :aiReview, p.updatedAt = CURRENT_TIMESTAMP WHERE p.productId = :productId")
+    void updateAiReview(@Param("productId") Long productId, @Param("aiReview") String aiReview);
 }
