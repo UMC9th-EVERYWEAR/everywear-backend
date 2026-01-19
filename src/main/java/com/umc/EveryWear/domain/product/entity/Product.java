@@ -45,5 +45,5 @@ public class Product extends BaseEntity {
     private String aiReview;
 
     @Column(name = "product_num")
-    private String productNum;
+    private Long productNum;
 }

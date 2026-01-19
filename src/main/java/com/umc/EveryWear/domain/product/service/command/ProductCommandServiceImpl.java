@@ -443,8 +443,23 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
             
-            data.setProductNum(jsonNode.has("product_num") && !jsonNode.get("product_num").isNull() ? 
-                    jsonNode.get("product_num").asText() : null);
+            // product_num 처리
+            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
+                JsonNode productNumNode = jsonNode.get("product_num");
+                if (productNumNode.isNumber()) {
+                    data.setProductNum(productNumNode.asLong());
+                } else if (productNumNode.isTextual()) {
+                    try {
+                        data.setProductNum(Long.parseLong(productNumNode.asText()));
+                    } catch (NumberFormatException e) {
+                        data.setProductNum(null);
+                    }
+                } else {
+                    data.setProductNum(null);
+                }
+            } else {
+                data.setProductNum(null);
+            }
             
             return data;
             
@@ -608,7 +623,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         private String price;
         private Float starPoint;
         private String aiReview;
-        private String productNum;
+        private Long productNum;
 
     }
 }
