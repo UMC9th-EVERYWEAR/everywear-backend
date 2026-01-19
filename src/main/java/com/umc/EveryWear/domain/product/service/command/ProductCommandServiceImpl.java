@@ -22,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +58,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId(), LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
                 Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
                         .orElse(existingProductByUrl);
@@ -67,16 +68,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlMusinsaProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByNum.getProductId(), productUrl, LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+                Product updatedProduct = productRepository.findById(existingProductByNum.getProductId())
+                        .orElse(existingProductByNum);
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
@@ -212,7 +216,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId(), LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
                 Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
                         .orElse(existingProductByUrl);
@@ -222,16 +226,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlZigzagProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByNum.getProductId(), productUrl, LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+                Product updatedProduct = productRepository.findById(existingProductByNum.getProductId())
+                        .orElse(existingProductByNum);
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
@@ -373,7 +380,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId(), LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
                 Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
                         .orElse(existingProductByUrl);
@@ -383,16 +390,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawl29cmProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByNum.getProductId(), productUrl, LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+                Product updatedProduct = productRepository.findById(existingProductByNum.getProductId())
+                        .orElse(existingProductByNum);
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
@@ -529,7 +539,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             
             if (existingProductByUrl != null) {
                 // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
+                productRepository.updateUpdatedAt(existingProductByUrl.getProductId(), LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
                 Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
                         .orElse(existingProductByUrl);
@@ -539,16 +549,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlWconceptProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
+                productRepository.updateProductUrlAndUpdatedAt(existingProductByNum.getProductId(), productUrl, LocalDateTime.now());
                 // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+                Product updatedProduct = productRepository.findById(existingProductByNum.getProductId())
+                        .orElse(existingProductByNum);
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
