@@ -33,25 +33,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/login/",
             "/swagger-ui/",
             "/v3/api-docs/",
-            "/oauth/callback",
-            "/api/auth/",
-            "/",
-            "/health"
+            "/oauth/callback"
     );
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        boolean shouldSkip = EXCLUDE_URLS.stream().anyMatch(path::startsWith);
-
-        // 디버깅 로그 (배포 후 확인용)
-        if (!shouldSkip) {
-            log.info("🔒 JWT Filter WILL RUN for path: {}", path);
-        } else {
-            log.info("⏭️  JWT Filter SKIPPED for path: {}", path);
-        }
-
-        return shouldSkip;
+        return EXCLUDE_URLS.stream().anyMatch(path::startsWith);
     }
 
     @Override
@@ -61,26 +49,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        log.info("🔍 JWT Filter executing for: {}", request.getRequestURI());
-
         try {
             String jwt = getJwtFromRequest(request);
 
-            // Authorization 헤더가 없으면 그냥 통과
-            if (!StringUtils.hasText(jwt)) {
-                log.info("No JWT token found, proceeding without authentication");
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            if (jwtUtil.validateToken(jwt)) {
+            if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
                 Long userId = jwtUtil.getUserIdFromToken(jwt);
 
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found"));
 
+                // RefreshToken이 없거나 빈 문자열이면 로그아웃된 상태로 간주합니다.
                 if (user.getRefreshToken() == null || user.getRefreshToken().trim().isEmpty()) {
-                    log.warn("이미 로그아웃된 사용자입니다. - User: {}", user.getEmail());
+                    log.warn("이미 로그아웃된 사용자입니다. (Access Token 유효하지만 Refresh Token 없음) - User: {}", user.getEmail());
+
+                    // 인증 설정 없이 필터 체인 진행 -> Spring Security가 403 Forbidden 처리함
                     filterChain.doFilter(request, response);
                     return;
                 }
