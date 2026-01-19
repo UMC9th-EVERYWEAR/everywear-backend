@@ -45,6 +45,9 @@ public enum ProductSuccessCode implements BaseSuccessCode {
     CM29_PRODUCT_URL_UPDATED(HttpStatus.OK,
             "200",
             "29cm 상품의 URL을 업데이트했습니다."),
+    PRODUCTS_RETRIEVED(HttpStatus.OK,
+            "200",
+            "전체 상품을 조회했습니다."),
     ;
 
     private final HttpStatus status;

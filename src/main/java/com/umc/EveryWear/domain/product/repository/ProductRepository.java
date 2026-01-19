@@ -12,13 +12,11 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    Optional<Product> findByProductUrl(String productUrl);
-    Optional<Product> findByProductNum(Long productNum);
-    Optional<Product> findByProductUrlAndUser_UserId(String productUrl, Long userId);
-    Optional<Product> findByProductNumAndUser_UserId(Long productNum, Long userId);
+    Optional<Product> findByProductUrl(String productUrl, Long userId);
+    Optional<Product> findByProductNum(Long productNum, Long userId);
     
-    // updatedAt 내림차순으로 모든 상품 조회
-    List<Product> findAllByOrderByUpdatedAtDesc();
+    // 사용자별 상품 조회 (updatedAt 내림차순)
+    List<Product> findAllByOrderByUpdatedAtDesc(Long userId);
     
     // updatedAt을 현재 시간으로 업데이트
     @Modifying

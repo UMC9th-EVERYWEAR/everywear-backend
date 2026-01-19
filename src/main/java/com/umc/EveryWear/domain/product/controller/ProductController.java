@@ -4,12 +4,14 @@ import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.exception.code.ProductSuccessCode;
 import com.umc.EveryWear.domain.product.service.command.ProductCommandService;
+import com.umc.EveryWear.domain.product.service.query.ProductQueryService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +24,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
 
     private final ProductCommandService productCommandService;
+    private final ProductQueryService productQueryService;
+
+    @Operation(
+            summary = "전체 상품 조회",
+            description = "사용자가 등록한 모든 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/product")
+    public ApiResponse<ProductResDTO.ProductListResponse> getAllProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getAllProductsByUserId(userId);
+        return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
+    }
 
     @Operation(
             summary = "무신사 상품 등록",

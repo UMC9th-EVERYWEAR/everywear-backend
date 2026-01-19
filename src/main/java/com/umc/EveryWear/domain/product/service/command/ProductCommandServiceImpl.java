@@ -60,7 +60,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
             
             // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
-            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -78,7 +78,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -223,7 +223,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
             
             // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
-            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -241,7 +241,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -392,7 +392,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
             
             // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
-            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -410,7 +410,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -556,7 +556,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
             
             // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
-            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
+            Product existingProductByUrl = productRepository.findByProductUrl(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -574,7 +574,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
