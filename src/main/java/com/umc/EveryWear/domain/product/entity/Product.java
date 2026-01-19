@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.entity;
 
+import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,4 +47,8 @@ public class Product extends BaseEntity {
 
     @Column(name = "product_num")
     private Long productNum;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

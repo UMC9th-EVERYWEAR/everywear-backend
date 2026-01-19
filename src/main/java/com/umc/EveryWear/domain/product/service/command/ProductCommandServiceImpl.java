@@ -9,6 +9,8 @@ import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
+import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ import java.util.Map;
 public class ProductCommandServiceImpl implements ProductCommandService {
 
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
     
@@ -40,8 +43,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private String fastApiBaseUrl;
 
     @Override
-    public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportMusinsaDTO dto) {
+    public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
         try {
+            // User 조회
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -52,8 +59,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
+            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -68,10 +75,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlMusinsaProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -96,6 +103,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
                     .productNum(crawlerData.getProductNum())
+                    .user(user)
                     .build();
 
             Product savedProduct = productRepository.save(product);
@@ -198,8 +206,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
-    public ProductResDTO.ImportDTO importZigzagProduct(ProductReqDTO.ImportZigzagDTO dto) {
+    public ProductResDTO.ImportDTO importZigzagProduct(Long userId, ProductReqDTO.ImportZigzagDTO dto) {
         try {
+            // User 조회
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -210,8 +222,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
+            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -226,10 +238,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlZigzagProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -254,6 +266,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
                     .productNum(crawlerData.getProductNum())
+                    .user(user)
                     .build();
 
             Product savedProduct = productRepository.save(product);
@@ -362,8 +375,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
   
   
     @Override
-    public ProductResDTO.ImportDTO import29cmProduct(ProductReqDTO.Import29cmDTO dto) {
+    public ProductResDTO.ImportDTO import29cmProduct(Long userId, ProductReqDTO.Import29cmDTO dto) {
         try {
+            // User 조회
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -374,8 +391,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
+            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -390,10 +407,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawl29cmProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -418,6 +435,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
                     .productNum(crawlerData.getProductNum())
+                    .user(user)
                     .build();
 
             Product savedProduct = productRepository.save(product);
@@ -521,8 +539,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
 
     @Override
-    public ProductResDTO.ImportDTO importWconceptProduct(ProductReqDTO.WconceptImportDTO dto) {
+    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto) {
         try {
+            // User 조회
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -533,8 +555,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
+            // URL로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
+            Product existingProductByUrl = productRepository.findByProductUrlAndUser_UserId(productUrl, userId)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
@@ -549,10 +571,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlWconceptProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인
+            // 크롤링 후 상품 고윳값으로 이미 등록된 상품인지 확인 (해당 유저의 상품만)
             Product existingProductByNum = null;
             if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                existingProductByNum = productRepository.findByProductNumAndUser_UserId(crawlerData.getProductNum(), userId)
                         .orElse(null);
             }
             
@@ -577,6 +599,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
                     .productNum(crawlerData.getProductNum())
+                    .user(user)
                     .build();
 
             Product savedProduct = productRepository.save(product);

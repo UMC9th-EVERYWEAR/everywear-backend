@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByProductUrl(String productUrl);
     Optional<Product> findByProductNum(Long productNum);
+    Optional<Product> findByProductUrlAndUser_UserId(String productUrl, Long userId);
+    Optional<Product> findByProductNumAndUser_UserId(Long productNum, Long userId);
     
     // updatedAt 내림차순으로 모든 상품 조회
     List<Product> findAllByOrderByUpdatedAtDesc();

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Product", description = "상품 관련 API")
 @RestController
-@RequestMapping("/api/product")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -33,12 +33,12 @@ public class ProductController {
                     " • 앱 공유하기: https://musinsa.onelink.me/ANAQ/{공유코드}\n\n" +
                     " • 쇼핑몰 앱 공유하기: https://musinsa.onelink.me/PvkC/{공유코드}"
     )
-    @PostMapping("/import/musinsa")
+    @PostMapping("/product/import/musinsa")
     public ApiResponse<ProductResDTO.ImportDTO> importMusinsaProduct(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody ProductReqDTO.ImportMusinsaDTO dto
     ) {
-        ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(dto);
+        ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(userId, dto);
         ProductSuccessCode successCode;
         if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
             successCode = ProductSuccessCode.MUSINSA_PRODUCT_URL_UPDATED;
@@ -60,12 +60,12 @@ public class ProductController {
                     " • 앱 공유하기: https://zigzag.kr/catalog/products/{상품ID}\n\n" +
                     " • 쇼핑몰 앱 공유하기: https://s.zigzag.kr/{공유코드}"
     )
-    @PostMapping("/import/zigzag")
+    @PostMapping("/product/import/zigzag")
     public ApiResponse<ProductResDTO.ImportDTO> importZigzagProduct(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody ProductReqDTO.ImportZigzagDTO dto
     ) {
-        ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(dto);
+        ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(userId, dto);
         ProductSuccessCode successCode;
         if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
             successCode = ProductSuccessCode.ZIGZAG_PRODUCT_URL_UPDATED;
@@ -87,12 +87,12 @@ public class ProductController {
                     " • 앱 공유하기: https://m.wconcept.co.kr/Product/{상품ID}?applanding=Z}\n\n" +
                     " • 쇼핑몰 앱 공유하기: https://m.wconcept.co.kr/Product/{상품ID}?applanding=Y"
     )
-    @PostMapping("/import/wconcept")
+    @PostMapping("/product/import/wconcept")
     public ApiResponse<ProductResDTO.ImportDTO> importWconceptProduct(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody ProductReqDTO.WconceptImportDTO dto
     ) {
-        ProductResDTO.ImportDTO response = productCommandService.importWconceptProduct(dto);
+        ProductResDTO.ImportDTO response = productCommandService.importWconceptProduct(userId, dto);
         ProductSuccessCode successCode;
         if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
             successCode = ProductSuccessCode.WCONCEPT_PRODUCT_URL_UPDATED;
@@ -114,12 +114,12 @@ public class ProductController {
             " • 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}\n\n" +
             " • 쇼핑몰 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}"
     )
-    @PostMapping("/import/29cm")
+    @PostMapping("/product/import/29cm")
     public ApiResponse<ProductResDTO.ImportDTO> import29cmProduct(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody ProductReqDTO.Import29cmDTO dto
     ) {
-        ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(dto);
+        ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(userId, dto);
         ProductSuccessCode successCode;
         if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
             successCode = ProductSuccessCode.CM29_PRODUCT_URL_UPDATED;
