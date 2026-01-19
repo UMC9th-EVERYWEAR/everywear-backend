@@ -58,6 +58,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found"));
 
+                // RefreshToken이 없거나 빈 문자열이면 로그아웃된 상태로 간주합니다.
+                if (user.getRefreshToken() == null || user.getRefreshToken().trim().isEmpty()) {
+                    log.warn("이미 로그아웃된 사용자입니다. (Access Token 유효하지만 Refresh Token 없음) - User: {}", user.getEmail());
+
+                    // 인증 설정 없이 필터 체인 진행 -> Spring Security가 403 Forbidden 처리함
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, null);
 
