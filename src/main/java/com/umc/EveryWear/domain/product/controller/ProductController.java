@@ -31,9 +31,10 @@ public class ProductController {
             summary = "전체 상품 조회 / 카테고리별 상품 조회",
             description = "사용자가 등록한 모든 상품 또는 특정 카테고리 상품을 최신 업데이트 순으로 조회합니다.\n\n" +
                     "쿼리 파라미터 없음: 전체 상품 조회\n\n" +
+                    "쿼리 파라미터 category=top: 상의 상품 조회\n\n" +
                     "쿼리 파라미터 category=bottom: 하의 상품 조회"
     )
-    @GetMapping("/product")
+    @GetMapping("/products")
     public ApiResponse<ProductResDTO.ProductListResponse> getProducts(
             @AuthenticationPrincipal Long userId,
             @RequestParam(required = false) String category
@@ -51,22 +52,6 @@ public class ProductController {
             ProductResDTO.ProductListResponse response = productQueryService.getAllProductsByUserId(userId);
             return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
         }
-    }
-
-    @Operation(
-            summary = "카테고리별 상품 조회",
-            description = "사용자가 등록한 특정 카테고리 상품을 최신 업데이트 순으로 조회합니다.\n\n" +
-                    "카테고리 값: 상의"
-    )
-    @GetMapping("/products")
-    public ApiResponse<ProductResDTO.ProductListResponse> getProductsByCategory(
-            @AuthenticationPrincipal Long userId,
-            @RequestParam String category
-    ) {
-        // 쿼리 파라미터를 실제 카테고리 값으로 매핑
-        String categoryValue = mapCategoryParam(category);
-        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, categoryValue);
-        return ApiResponse.onSuccess(ProductSuccessCode.TOP_PRODUCTS_RETRIEVED, response);
     }
 
     private String mapCategoryParam(String category) {
