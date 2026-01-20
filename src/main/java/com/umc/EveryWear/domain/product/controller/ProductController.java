@@ -32,7 +32,8 @@ public class ProductController {
             description = "사용자가 등록한 모든 상품 또는 특정 카테고리 상품을 최신 업데이트 순으로 조회합니다.\n\n" +
                     "쿼리 파라미터 없음: 전체 상품 조회\n\n" +
                     "쿼리 파라미터 category=top: 상의 상품 조회\n\n" +
-                    "쿼리 파라미터 category=bottom: 하의 상품 조회"
+                    "쿼리 파라미터 category=bottom: 하의 상품 조회\n\n" +
+                    "쿼리 파라미터 category=outer: 아우터 상품 조회"
     )
     @GetMapping("/products")
     public ApiResponse<ProductResDTO.ProductListResponse> getProducts(
@@ -59,6 +60,7 @@ public class ProductController {
         return switch (category.toLowerCase()) {
             case "top" -> "상의";
             case "bottom" -> "하의";
+            case "outer" -> "아우터";
             default -> category; // 기본값은 그대로 사용
         };
     }
@@ -68,6 +70,7 @@ public class ProductController {
         return switch (category) {
             case "상의" -> ProductSuccessCode.TOP_PRODUCTS_RETRIEVED;
             case "하의" -> ProductSuccessCode.BOTTOM_PRODUCTS_RETRIEVED;
+            case "아우터" -> ProductSuccessCode.OUTER_PRODUCTS_RETRIEVED;
             default -> ProductSuccessCode.PRODUCTS_RETRIEVED;
         };
     }
