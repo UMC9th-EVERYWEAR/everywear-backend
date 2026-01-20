@@ -99,18 +99,6 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "홈 화면 상품 조회",
-            description = "사용자가 등록한 전체 상품 중 최신 업데이트 순으로 상위 6개 상품을 조회합니다."
-    )
-    @GetMapping("/home/products")
-    public ApiResponse<ProductResDTO.ProductListResponse> getHomeProducts(
-            @AuthenticationPrincipal Long userId
-    ) {
-        ProductResDTO.ProductListResponse response = productQueryService.getHomeProducts(userId);
-        return ApiResponse.onSuccess(ProductSuccessCode.HOME_PRODUCTS_RETRIEVED, response);
-    }
-
-    @Operation(
             summary = "무신사 상품 등록",
             description = "등록할 상품 url을 입력해 상품 정보를 저장합니다.\n\n" +
                     "입력 URL 형식들 : \n\n" +
