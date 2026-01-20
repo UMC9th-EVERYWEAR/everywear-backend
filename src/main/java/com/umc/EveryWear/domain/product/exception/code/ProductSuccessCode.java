@@ -48,6 +48,9 @@ public enum ProductSuccessCode implements BaseSuccessCode {
     PRODUCTS_RETRIEVED(HttpStatus.OK,
             "200",
             "전체 상품을 조회했습니다."),
+    TOP_PRODUCTS_RETRIEVED(HttpStatus.OK,
+            "200",
+            "상의 상품을 조회했습니다."),
     ;
 
     private final HttpStatus status;

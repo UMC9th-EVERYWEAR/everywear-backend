@@ -18,6 +18,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // 사용자별 상품 조회 (updatedAt 내림차순)
     List<Product> findAllByOrderByUpdatedAtDesc(Long userId);
     
+    // 사용자별 카테고리별 상품 조회 (updatedAt 내림차순)
+    List<Product> findByUser_UserIdAndCategoryOrderByUpdatedAtDesc(Long userId, String category);
+    
     // updatedAt을 현재 시간으로 업데이트
     @Modifying
     @Query("UPDATE Product p SET p.updatedAt = :updatedAt WHERE p.productId = :productId")

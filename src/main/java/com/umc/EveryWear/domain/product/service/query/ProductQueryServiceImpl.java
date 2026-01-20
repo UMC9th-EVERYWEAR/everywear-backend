@@ -30,4 +30,17 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 .products(productList)
                 .build();
     }
+
+    @Override
+    public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
+        List<Product> products = productRepository.findByUser_UserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
+        
+        List<ProductResDTO.ListDTO> productList = products.stream()
+                .map(ProductConverter::toListDTO)
+                .collect(Collectors.toList());
+
+        return ProductResDTO.ProductListResponse.builder()
+                .products(productList)
+                .build();
+    }
 }

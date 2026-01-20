@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Product", description = "상품 관련 API")
@@ -36,6 +37,30 @@ public class ProductController {
     ) {
         ProductResDTO.ProductListResponse response = productQueryService.getAllProductsByUserId(userId);
         return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "카테고리별 상품 조회",
+            description = "사용자가 등록한 특정 카테고리 상품을 최신 업데이트 순으로 조회합니다.\n\n" +
+                    "카테고리 값: 상의"
+    )
+    @GetMapping("/products")
+    public ApiResponse<ProductResDTO.ProductListResponse> getProductsByCategory(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam String category
+    ) {
+        // 쿼리 파라미터를 실제 카테고리 값으로 매핑
+        String categoryValue = mapCategoryParam(category);
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, categoryValue);
+        return ApiResponse.onSuccess(ProductSuccessCode.TOP_PRODUCTS_RETRIEVED, response);
+    }
+
+    private String mapCategoryParam(String category) {
+        // 쿼리 파라미터를 실제 카테고리 값으로 매핑
+        return switch (category.toLowerCase()) {
+            case "top" -> "상의";
+            default -> category; // 기본값은 그대로 사용
+        };
     }
 
     @Operation(
