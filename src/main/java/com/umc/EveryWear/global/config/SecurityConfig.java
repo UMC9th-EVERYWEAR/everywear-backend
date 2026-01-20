@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",                // ALB 헬스체크용
                                 "/health",          // 상세 헬스체크용
+                                "/error",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
