@@ -33,7 +33,8 @@ public class ProductController {
                     "쿼리 파라미터 없음: 전체 상품 조회\n\n" +
                     "쿼리 파라미터 category=top: 상의 상품 조회\n\n" +
                     "쿼리 파라미터 category=bottom: 하의 상품 조회\n\n" +
-                    "쿼리 파라미터 category=outer: 아우터 상품 조회"
+                    "쿼리 파라미터 category=outer: 아우터 상품 조회\n\n" +
+                    "쿼리 파라미터 category=dress: 원피스 상품 조회"
     )
     @GetMapping("/products")
     public ApiResponse<ProductResDTO.ProductListResponse> getProducts(
@@ -61,6 +62,7 @@ public class ProductController {
             case "top" -> "상의";
             case "bottom" -> "하의";
             case "outer" -> "아우터";
+            case "dress" -> "원피스";
             default -> category; // 기본값은 그대로 사용
         };
     }
@@ -71,6 +73,7 @@ public class ProductController {
             case "상의" -> ProductSuccessCode.TOP_PRODUCTS_RETRIEVED;
             case "하의" -> ProductSuccessCode.BOTTOM_PRODUCTS_RETRIEVED;
             case "아우터" -> ProductSuccessCode.OUTER_PRODUCTS_RETRIEVED;
+            case "원피스" -> ProductSuccessCode.DRESS_PRODUCTS_RETRIEVED;
             default -> ProductSuccessCode.PRODUCTS_RETRIEVED;
         };
     }
