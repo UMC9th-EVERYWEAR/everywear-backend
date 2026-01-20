@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Product", description = "상품 관련 API")
@@ -28,57 +27,75 @@ public class ProductController {
     private final ProductQueryService productQueryService;
 
     @Operation(
-            summary = "전체 상품 조회 / 카테고리별 상품 조회",
-            description = "사용자가 등록한 모든 상품 또는 특정 카테고리 상품을 최신 업데이트 순으로 조회합니다.\n\n" +
-                    "쿼리 파라미터 없음: 전체 상품 조회\n\n" +
-                    "쿼리 파라미터 category=top: 상의 상품 조회\n\n" +
-                    "쿼리 파라미터 category=bottom: 하의 상품 조회\n\n" +
-                    "쿼리 파라미터 category=outer: 아우터 상품 조회\n\n" +
-                    "쿼리 파라미터 category=dress: 원피스 상품 조회\n\n" +
-                    "쿼리 파라미터 category=etc: 기타 상품 조회"
+            summary = "전체 상품 조회",
+            description = "사용자가 등록한 모든 상품을 최신 업데이트 순으로 조회합니다."
     )
     @GetMapping("/products")
     public ApiResponse<ProductResDTO.ProductListResponse> getProducts(
-            @AuthenticationPrincipal Long userId,
-            @RequestParam(required = false) String category
+            @AuthenticationPrincipal Long userId
     ) {
-        if (category != null && !category.isEmpty()) {
-            // 카테고리별 조회
-            String categoryValue = mapCategoryParam(category);
-            ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, categoryValue);
-            
-            // 카테고리에 따른 성공 코드 반환
-            ProductSuccessCode successCode = getCategorySuccessCode(categoryValue);
-            return ApiResponse.onSuccess(successCode, response);
-        } else {
-            // 전체 상품 조회
-            ProductResDTO.ProductListResponse response = productQueryService.getAllProductsByUserId(userId);
-            return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
-        }
+        ProductResDTO.ProductListResponse response = productQueryService.getAllProductsByUserId(userId);
+        return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
     }
 
-    private String mapCategoryParam(String category) {
-        // 쿼리 파라미터를 실제 카테고리 값으로 매핑
-        return switch (category.toLowerCase()) {
-            case "top" -> "상의";
-            case "bottom" -> "하의";
-            case "outer" -> "아우터";
-            case "dress" -> "원피스";
-            case "etc" -> "기타";
-            default -> category; // 기본값은 그대로 사용
-        };
+    @Operation(
+            summary = "상의 상품 조회",
+            description = "사용자가 등록한 상의 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/products/top")
+    public ApiResponse<ProductResDTO.ProductListResponse> getTopProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, "상의");
+        return ApiResponse.onSuccess(ProductSuccessCode.TOP_PRODUCTS_RETRIEVED, response);
     }
 
-    private ProductSuccessCode getCategorySuccessCode(String category) {
-        // 카테고리에 따른 성공 코드 반환
-        return switch (category) {
-            case "상의" -> ProductSuccessCode.TOP_PRODUCTS_RETRIEVED;
-            case "하의" -> ProductSuccessCode.BOTTOM_PRODUCTS_RETRIEVED;
-            case "아우터" -> ProductSuccessCode.OUTER_PRODUCTS_RETRIEVED;
-            case "원피스" -> ProductSuccessCode.DRESS_PRODUCTS_RETRIEVED;
-            case "기타" -> ProductSuccessCode.ETC_PRODUCTS_RETRIEVED;
-            default -> ProductSuccessCode.PRODUCTS_RETRIEVED;
-        };
+    @Operation(
+            summary = "하의 상품 조회",
+            description = "사용자가 등록한 하의 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/products/bottom")
+    public ApiResponse<ProductResDTO.ProductListResponse> getBottomProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, "하의");
+        return ApiResponse.onSuccess(ProductSuccessCode.BOTTOM_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "아우터 상품 조회",
+            description = "사용자가 등록한 아우터 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/products/outer")
+    public ApiResponse<ProductResDTO.ProductListResponse> getOuterProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, "아우터");
+        return ApiResponse.onSuccess(ProductSuccessCode.OUTER_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "원피스 상품 조회",
+            description = "사용자가 등록한 원피스 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/products/dress")
+    public ApiResponse<ProductResDTO.ProductListResponse> getDressProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, "원피스");
+        return ApiResponse.onSuccess(ProductSuccessCode.DRESS_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "기타 상품 조회",
+            description = "사용자가 등록한 기타 상품을 최신 업데이트 순으로 조회합니다."
+    )
+    @GetMapping("/products/etc")
+    public ApiResponse<ProductResDTO.ProductListResponse> getEtcProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, "기타");
+        return ApiResponse.onSuccess(ProductSuccessCode.ETC_PRODUCTS_RETRIEVED, response);
     }
 
     @Operation(
