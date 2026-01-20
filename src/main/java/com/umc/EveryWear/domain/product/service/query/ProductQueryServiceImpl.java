@@ -43,4 +43,17 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 .products(productList)
                 .build();
     }
+
+    @Override
+    public ProductResDTO.ProductListResponse getHomeProducts(Long userId) {
+        List<Product> products = productRepository.findTop6ByUser_UserIdOrderByUpdatedAtDesc(userId);
+        
+        List<ProductResDTO.ListDTO> productList = products.stream()
+                .map(ProductConverter::toListDTO)
+                .collect(Collectors.toList());
+
+        return ProductResDTO.ProductListResponse.builder()
+                .products(productList)
+                .build();
+    }
 }
