@@ -3,7 +3,7 @@ package com.umc.EveryWear.domain.product.service.query;
 import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
-import com.umc.EveryWear.domain.product.repository.ProductRepository;
+import com.umc.EveryWear.domain.fitting.repository.FittingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ProductQueryServiceImpl implements ProductQueryService {
 
-    private final ProductRepository productRepository;
+    private final FittingRepository fittingRepository;
 
     @Override
     public ProductResDTO.ProductListResponse getAllProductsByUserId(Long userId) {
-        List<Product> products = productRepository.findAllByOrderByUpdatedAtDesc(userId);
+        List<Product> products = fittingRepository.findAllProductsByUserIdOrderByUpdatedAtDesc(userId);
         
         List<ProductResDTO.ListDTO> productList = products.stream()
                 .map(ProductConverter::toListDTO)
@@ -33,7 +33,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     @Override
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
-        List<Product> products = productRepository.findByUser_UserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
+        List<Product> products = fittingRepository.findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
         
         List<ProductResDTO.ListDTO> productList = products.stream()
                 .map(ProductConverter::toListDTO)

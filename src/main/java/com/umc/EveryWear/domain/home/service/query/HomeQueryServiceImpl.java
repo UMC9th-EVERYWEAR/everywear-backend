@@ -3,8 +3,10 @@ package com.umc.EveryWear.domain.home.service.query;
 import com.umc.EveryWear.domain.home.converter.HomeConverter;
 import com.umc.EveryWear.domain.home.dto.res.HomeResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
-import com.umc.EveryWear.domain.product.repository.ProductRepository;
+import com.umc.EveryWear.domain.fitting.repository.FittingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,11 +18,12 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class HomeQueryServiceImpl implements HomeQueryService {
 
-    private final ProductRepository productRepository;
+    private final FittingRepository fittingRepository;
 
     @Override
     public HomeResDTO.ProductListResponse getHomeProducts(Long userId) {
-        List<Product> products = productRepository.findTop6ByUser_UserIdOrderByUpdatedAtDesc(userId);
+        Pageable pageable = PageRequest.of(0, 6);
+        List<Product> products = fittingRepository.findTop6ProductsByUserIdOrderByUpdatedAtDesc(userId, pageable);
         
         List<HomeResDTO.ProductDTO> productList = products.stream()
                 .map(HomeConverter::toProductDTO)

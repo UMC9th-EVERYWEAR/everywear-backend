@@ -1,14 +1,10 @@
 package com.umc.EveryWear.domain.user.entity;
 
-import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.user.enums.UserStatus;
 import com.umc.EveryWear.domain.user.enums.SocialType;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -48,14 +44,10 @@ public class User extends BaseEntity {
     @Column(name = "alarm_onoff", nullable = false)
     private Boolean alarmOnoff;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Product> products = new ArrayList<>();
-
     @Builder
     public User(Long userId, String oauthId, String name, String email,
                 SocialType socialType, UserStatus isActive, String refreshToken,
-                Boolean isAgreed, Boolean alarmOnoff, List<Product> products) {
+                Boolean isAgreed, Boolean alarmOnoff) {
         this.userId = userId;
         this.oauthId = oauthId;
         this.name = name;
@@ -65,7 +57,6 @@ public class User extends BaseEntity {
         this.refreshToken = refreshToken;
         this.isAgreed = isAgreed;
         this.alarmOnoff = alarmOnoff;
-        this.products = products != null ? products : new ArrayList<>();
     }
 
     // Refresh Token 업데이트 메서드
