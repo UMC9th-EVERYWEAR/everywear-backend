@@ -9,8 +9,14 @@ import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
+import com.umc.EveryWear.domain.fitting.entity.FittingHistory;
+import com.umc.EveryWear.domain.fitting.repository.FittingRepository;
+import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -20,6 +26,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +37,8 @@ import java.util.Map;
 public class ProductCommandServiceImpl implements ProductCommandService {
 
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final FittingRepository fittingRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
     
@@ -37,8 +46,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private String fastApiBaseUrl;
 
     @Override
-    public ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportMusinsaDTO dto) {
+    public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
         try {
+            // User 조회 (FittingHistory에 저장하기 위해)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -49,36 +62,67 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            // URL로 이미 등록된 상품인지 확인 (전역)
             Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
-                        .orElse(existingProductByUrl);
-                return ProductConverter.toImportDTO(updatedProduct, true);
+                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(existingProductByUrl)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                }
+                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlMusinsaProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
+                existingProductByNum.updateProductUrl(productUrl);
+                Product updatedProduct = productRepository.save(existingProductByNum);
+                
+                // FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(updatedProduct)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                }
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
-            // Product 엔터티 생성 및 저장
+            // Product 엔터티 생성 및 저장 (전역)
             Product product = Product.builder()
                     .shoppingmallName(crawlerData.getShoppingmallName())
                     .productUrl(crawlerData.getProductUrl())
@@ -89,9 +133,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
+            
+            // FittingHistory에 저장
+            FittingHistory fittingHistory = FittingHistory.builder()
+                    .user(user)
+                    .product(savedProduct)
+                    .fittingResultImage(null)
+                    .isLiked(false)
+                    .build();
+            fittingRepository.save(fittingHistory);
 
             return ProductConverter.toImportDTO(savedProduct);
 
@@ -160,6 +214,24 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
             
+            // product_num 처리
+            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
+                JsonNode productNumNode = jsonNode.get("product_num");
+                if (productNumNode.isNumber()) {
+                    data.setProductNum(productNumNode.asLong());
+                } else if (productNumNode.isTextual()) {
+                    try {
+                        data.setProductNum(Long.parseLong(productNumNode.asText()));
+                    } catch (NumberFormatException e) {
+                        data.setProductNum(null);
+                    }
+                } else {
+                    data.setProductNum(null);
+                }
+            } else {
+                data.setProductNum(null);
+            }
+            
             return data;
             
         } catch (WebClientResponseException e) {
@@ -173,8 +245,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
-    public ProductResDTO.ImportDTO importZigzagProduct(ProductReqDTO.ImportZigzagDTO dto) {
+    public ProductResDTO.ImportDTO importZigzagProduct(Long userId, ProductReqDTO.ImportZigzagDTO dto) {
         try {
+            // User 조회 (FittingHistory에 저장하기 위해)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -185,36 +261,67 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            // URL로 이미 등록된 상품인지 확인 (전역)
             Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
-                        .orElse(existingProductByUrl);
-                return ProductConverter.toImportDTO(updatedProduct, true);
+                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(existingProductByUrl)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                }
+                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlZigzagProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
+                existingProductByNum.updateProductUrl(productUrl);
+                Product updatedProduct = productRepository.save(existingProductByNum);
+                
+                // FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(updatedProduct)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                }
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
-            // Product 엔터티 생성 및 저장
+            // Product 엔터티 생성 및 저장 (전역)
             Product product = Product.builder()
                     .shoppingmallName(crawlerData.getShoppingmallName())
                     .productUrl(crawlerData.getProductUrl())
@@ -225,9 +332,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
+            
+            // FittingHistory에 저장
+            FittingHistory fittingHistory = FittingHistory.builder()
+                    .user(user)
+                    .product(savedProduct)
+                    .fittingResultImage(null)
+                    .isLiked(false)
+                    .build();
+            fittingRepository.save(fittingHistory);
 
             return ProductConverter.toImportDTO(savedProduct);
 
@@ -301,6 +418,24 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
             
+            // product_num 처리
+            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
+                JsonNode productNumNode = jsonNode.get("product_num");
+                if (productNumNode.isNumber()) {
+                    data.setProductNum(productNumNode.asLong());
+                } else if (productNumNode.isTextual()) {
+                    try {
+                        data.setProductNum(Long.parseLong(productNumNode.asText()));
+                    } catch (NumberFormatException e) {
+                        data.setProductNum(null);
+                    }
+                } else {
+                    data.setProductNum(null);
+                }
+            } else {
+                data.setProductNum(null);
+            }
+            
             return data;
             
         } catch (WebClientResponseException e) {
@@ -315,8 +450,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
   
   
     @Override
-    public ProductResDTO.ImportDTO import29cmProduct(ProductReqDTO.Import29cmDTO dto) {
+    public ProductResDTO.ImportDTO import29cmProduct(Long userId, ProductReqDTO.Import29cmDTO dto) {
         try {
+            // User 조회 (FittingHistory에 저장하기 위해)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -327,36 +466,67 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            // URL로 이미 등록된 상품인지 확인 (전역)
             Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
-                        .orElse(existingProductByUrl);
-                return ProductConverter.toImportDTO(updatedProduct, true);
+                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(existingProductByUrl)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                }
+                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawl29cmProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
+                existingProductByNum.updateProductUrl(productUrl);
+                Product updatedProduct = productRepository.save(existingProductByNum);
+                
+                // FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(updatedProduct)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                }
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
-            // Product 엔터티 생성 및 저장
+            // Product 엔터티 생성 및 저장 (전역)
             Product product = Product.builder()
                     .shoppingmallName(crawlerData.getShoppingmallName())
                     .productUrl(crawlerData.getProductUrl())
@@ -367,9 +537,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
+            
+            // FittingHistory에 저장
+            FittingHistory fittingHistory = FittingHistory.builder()
+                    .user(user)
+                    .product(savedProduct)
+                    .fittingResultImage(null)
+                    .isLiked(false)
+                    .build();
+            fittingRepository.save(fittingHistory);
 
             return ProductConverter.toImportDTO(savedProduct);
 
@@ -438,6 +618,24 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
             
+            // product_num 처리
+            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
+                JsonNode productNumNode = jsonNode.get("product_num");
+                if (productNumNode.isNumber()) {
+                    data.setProductNum(productNumNode.asLong());
+                } else if (productNumNode.isTextual()) {
+                    try {
+                        data.setProductNum(Long.parseLong(productNumNode.asText()));
+                    } catch (NumberFormatException e) {
+                        data.setProductNum(null);
+                    }
+                } else {
+                    data.setProductNum(null);
+                }
+            } else {
+                data.setProductNum(null);
+            }
+            
             return data;
             
         } catch (WebClientResponseException e) {
@@ -452,8 +650,12 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
 
     @Override
-    public ProductResDTO.ImportDTO importWconceptProduct(ProductReqDTO.WconceptImportDTO dto) {
+    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto) {
         try {
+            // User 조회 (FittingHistory에 저장하기 위해)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+            
             // 2차 URL 형식 검증(이중 보호 처리)
             String productUrl = dto.getProduct_url();
             boolean isValidUrl = productUrl != null && (
@@ -464,36 +666,67 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
             
-            // URL로 이미 등록된 상품인지 확인 -> 그러면 크롤링X
+            // URL로 이미 등록된 상품인지 확인 (전역)
             Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 updatedAt을 현재 시간으로 업데이트
-                productRepository.updateUpdatedAt(existingProductByUrl.getProductId());
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByUrl.getProductId())
-                        .orElse(existingProductByUrl);
-                return ProductConverter.toImportDTO(updatedProduct, true);
+                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(existingProductByUrl)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                }
+                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
             ProductCrawlingData crawlerData = crawlWconceptProduct(dto.getProduct_url());
 
-            // 크롤링 후 상품명으로 이미 등록된 상품인지 확인
-            Product existingProductByName = productRepository.findByProductName(crawlerData.getProductName())
-                    .orElse(null);
+            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
+            Product existingProductByNum = null;
+            if (crawlerData.getProductNum() != null) {
+                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
+                        .orElse(null);
+            }
             
-            if (existingProductByName != null) {
-                // 상품명으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트하고 updatedAt 갱신
-                productRepository.updateProductUrlAndUpdatedAt(existingProductByName.getProductId(), productUrl);
-                // 업데이트 후 다시 조회하여 최신 정보 반환
-                Product updatedProduct = productRepository.findById(existingProductByName.getProductId())
-                        .orElse(existingProductByName);
+            if (existingProductByNum != null) {
+                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
+                existingProductByNum.updateProductUrl(productUrl);
+                Product updatedProduct = productRepository.save(existingProductByNum);
+                
+                // FittingHistory에 이미 등록되어 있는지 확인
+                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
+                        .orElse(null);
+                
+                if (existingFittingHistory == null) {
+                    // FittingHistory에 없으면 새로 생성
+                    FittingHistory fittingHistory = FittingHistory.builder()
+                            .user(user)
+                            .product(updatedProduct)
+                            .fittingResultImage(null)
+                            .isLiked(false)
+                            .build();
+                    fittingRepository.save(fittingHistory);
+                } else {
+                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
+                    fittingRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                }
                 return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
-            // Product 엔터티 생성 및 저장
+            // Product 엔터티 생성 및 저장 (전역)
             Product product = Product.builder()
                     .shoppingmallName(crawlerData.getShoppingmallName())
                     .productUrl(crawlerData.getProductUrl())
@@ -504,9 +737,19 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .price(crawlerData.getPrice())
                     .starPoint(crawlerData.getStarPoint())
                     .aiReview(crawlerData.getAiReview())
+                    .productNum(crawlerData.getProductNum())
                     .build();
 
             Product savedProduct = productRepository.save(product);
+            
+            // FittingHistory에 저장
+            FittingHistory fittingHistory = FittingHistory.builder()
+                    .user(user)
+                    .product(savedProduct)
+                    .fittingResultImage(null)
+                    .isLiked(false)
+                    .build();
+            fittingRepository.save(fittingHistory);
 
             return ProductConverter.toImportDTO(savedProduct);
 
@@ -575,6 +818,24 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
                     jsonNode.get("AI_review").asText() : null);
             
+            // product_num 처리
+            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
+                JsonNode productNumNode = jsonNode.get("product_num");
+                if (productNumNode.isNumber()) {
+                    data.setProductNum(productNumNode.asLong());
+                } else if (productNumNode.isTextual()) {
+                    try {
+                        data.setProductNum(Long.parseLong(productNumNode.asText()));
+                    } catch (NumberFormatException e) {
+                        data.setProductNum(null);
+                    }
+                } else {
+                    data.setProductNum(null);
+                }
+            } else {
+                data.setProductNum(null);
+            }
+            
             return data;
             
         } catch (WebClientResponseException e) {
@@ -587,8 +848,9 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-
     // 크롤링 데이터를 담는 내부 클래스
+    @Setter
+    @Getter
     private static class ProductCrawlingData {
         private String shoppingmallName;
         private String productUrl;
@@ -599,25 +861,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         private String price;
         private Float starPoint;
         private String aiReview;
+        private Long productNum;
 
-        // Getters and Setters
-        public String getShoppingmallName() { return shoppingmallName; }
-        public void setShoppingmallName(String shoppingmallName) { this.shoppingmallName = shoppingmallName; }
-        public String getProductUrl() { return productUrl; }
-        public void setProductUrl(String productUrl) { this.productUrl = productUrl; }
-        public String getCategory() { return category; }
-        public void setCategory(String category) { this.category = category; }
-        public String getProductImgUrl() { return productImgUrl; }
-        public void setProductImgUrl(String productImgUrl) { this.productImgUrl = productImgUrl; }
-        public String getProductName() { return productName; }
-        public void setProductName(String productName) { this.productName = productName; }
-        public String getBrandName() { return brandName; }
-        public void setBrandName(String brandName) { this.brandName = brandName; }
-        public String getPrice() { return price; }
-        public void setPrice(String price) { this.price = price; }
-        public Float getStarPoint() { return starPoint; }
-        public void setStarPoint(Float starPoint) { this.starPoint = starPoint; }
-        public String getAiReview() { return aiReview; }
-        public void setAiReview(String aiReview) { this.aiReview = aiReview; }
     }
 }
