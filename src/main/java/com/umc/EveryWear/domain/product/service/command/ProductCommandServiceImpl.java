@@ -260,22 +260,20 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
-                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
+                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
                         .orElse(null);
                 
-                if (existingFittingHistory == null) {
-                    // FittingHistory에 없으면 새로 생성
-                    FittingHistory fittingHistory = FittingHistory.builder()
+                if (existingUserProduct == null) {
+                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
+                    UserProduct userProduct = UserProduct.builder()
                             .user(user)
                             .product(existingProductByUrl)
-                            .fittingResultImage(null)
-                            .isLiked(false)
                             .build();
-                    fittingRepository.save(fittingHistory);
+                    userProductRepository.save(userProduct);
                 } else {
-                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
-                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
                 }
                 return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
@@ -461,22 +459,20 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
-                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
+                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
                         .orElse(null);
                 
-                if (existingFittingHistory == null) {
-                    // FittingHistory에 없으면 새로 생성
-                    FittingHistory fittingHistory = FittingHistory.builder()
+                if (existingUserProduct == null) {
+                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
+                    UserProduct userProduct = UserProduct.builder()
                             .user(user)
                             .product(existingProductByUrl)
-                            .fittingResultImage(null)
-                            .isLiked(false)
                             .build();
-                    fittingRepository.save(fittingHistory);
+                    userProductRepository.save(userProduct);
                 } else {
-                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
-                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
                 }
                 return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
@@ -657,22 +653,20 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     .orElse(null);
             
             if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 FittingHistory에 이미 등록되어 있는지 확인
-                FittingHistory existingFittingHistory = fittingRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
+                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
+                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
                         .orElse(null);
                 
-                if (existingFittingHistory == null) {
-                    // FittingHistory에 없으면 새로 생성
-                    FittingHistory fittingHistory = FittingHistory.builder()
+                if (existingUserProduct == null) {
+                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
+                    UserProduct userProduct = UserProduct.builder()
                             .user(user)
                             .product(existingProductByUrl)
-                            .fittingResultImage(null)
-                            .isLiked(false)
                             .build();
-                    fittingRepository.save(fittingHistory);
+                    userProductRepository.save(userProduct);
                 } else {
-                    // 기존 FittingHistory가 있으면 updated_at을 현재 시간으로 업데이트
-                    fittingRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
                 }
                 return ProductConverter.toImportDTO(existingProductByUrl, true);
             }

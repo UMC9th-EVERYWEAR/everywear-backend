@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     // 전역 상품 조회 (user_id 무관)
+    // 상품 등록 여부판단에 사용
     Optional<Product> findByProductUrl(String productUrl);
     Optional<Product> findByProductNum(Long productNum);
 }
