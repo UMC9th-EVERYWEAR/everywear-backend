@@ -1,13 +1,12 @@
 package com.umc.EveryWear.domain.fitting.entity;
 
-import com.umc.EveryWear.domain.user.entity.User;
-import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "fittingHistory")
+@Table(name = "fitting_history")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,18 +19,14 @@ public class FittingHistory extends BaseEntity {
     private Long fittingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @JoinColumn(name = "user_product_id", nullable = false)
+    private UserProduct userProduct;
 
     @Column(name = "fitting_result_image")
     private String fittingResultImage;
 
-    @Column(name = "is_liked", nullable = false)
-    @Builder.Default
-    private Boolean isLiked = false;
+    public void applyFittingResult(String imageUrl) {
+        this.fittingResultImage = imageUrl;
+    }
 }
 
