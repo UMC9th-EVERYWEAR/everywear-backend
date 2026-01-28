@@ -26,7 +26,7 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         List<UserProduct> userProducts = userProductRepository.findTop6ProductsByUserIdOrderByUpdatedAtDesc(userId, pageable);
         
         List<HomeResDTO.ProductDTO> productList = userProducts.stream()
-                .map(userProduct -> HomeConverter.toProductDTO(userProduct.getProduct()))
+                .map(userProduct -> HomeConverter.toProductDTO(userProduct))
                 .collect(Collectors.toList());
 
         return HomeResDTO.ProductListResponse.builder()

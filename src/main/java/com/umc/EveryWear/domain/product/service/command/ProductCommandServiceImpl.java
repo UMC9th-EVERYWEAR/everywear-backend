@@ -77,12 +77,15 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(existingProductByUrl)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    // 새로 등록한 경우 is_liked는 기본 false
+                    return ProductConverter.toImportDTO(savedUserProduct, true);
                 } else {
                     // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
                     userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    // 이전에 사용하던 is_liked 값을 그대로 응답
+                    return ProductConverter.toImportDTO(existingUserProduct, true);
                 }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
@@ -110,12 +113,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(updatedProduct)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    // 새 매핑이므로 is_liked 기본 false
+                    return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                    return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
             // Product 엔터티 생성 및 저장 (전역)
@@ -134,14 +139,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장
+            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
                     .build();
-            userProductRepository.save(userProduct);
+            UserProduct savedUserProduct = userProductRepository.save(userProduct);
 
-            return ProductConverter.toImportDTO(savedProduct);
+            return ProductConverter.toImportDTO(savedUserProduct);
 
         } catch (Exception e) {
             log.error("무신사 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
@@ -303,12 +308,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(existingProductByUrl)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    return ProductConverter.toImportDTO(savedUserProduct, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트만 수행
                     userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    return ProductConverter.toImportDTO(existingUserProduct, true);
                 }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
@@ -336,12 +342,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(updatedProduct)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                    return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
             // Product 엔터티 생성 및 저장 (전역)
@@ -360,14 +367,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장
+            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
                     .build();
-            userProductRepository.save(userProduct);
+            UserProduct savedUserProduct = userProductRepository.save(userProduct);
 
-            return ProductConverter.toImportDTO(savedProduct);
+            return ProductConverter.toImportDTO(savedUserProduct);
 
         } catch (Exception e) {
             log.error("지그재그 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
@@ -502,12 +509,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(existingProductByUrl)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    return ProductConverter.toImportDTO(savedUserProduct, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트만 수행
                     userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
+                    return ProductConverter.toImportDTO(existingUserProduct, true);
                 }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
             }
 
             // 크롤링 실행
@@ -535,12 +543,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .user(user)
                             .product(updatedProduct)
                             .build();
-                    userProductRepository.save(userProduct);
+                    UserProduct savedUserProduct = userProductRepository.save(userProduct);
+                    return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
+                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
+                    return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
             }
 
             // Product 엔터티 생성 및 저장 (전역)
@@ -559,14 +568,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장
+            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
                     .build();
-            userProductRepository.save(userProduct);
+            UserProduct savedUserProduct = userProductRepository.save(userProduct);
 
-            return ProductConverter.toImportDTO(savedProduct);
+            return ProductConverter.toImportDTO(savedUserProduct);
 
         } catch (Exception e) {
             log.error("29cm 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
