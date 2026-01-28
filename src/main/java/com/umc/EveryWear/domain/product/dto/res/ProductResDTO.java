@@ -20,6 +20,7 @@ public class ProductResDTO {
         private Float star_point;
         private String AI_review;
         private Long product_num;
+        private Boolean is_liked;
 
         // 업데이트 여부 및 URL 업데이트 여부는 응답 포함X
         @JsonIgnore

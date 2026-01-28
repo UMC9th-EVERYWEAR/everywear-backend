@@ -29,6 +29,7 @@ public class ProductConverter {
                 .star_point(product.getStarPoint())
                 .AI_review(product.getAiReview())
                 .product_num(product.getProductNum())
+                .is_liked(false)
                 .isUpdated(isUpdated)
                 .isUrlUpdated(isUrlUpdated)
                 .build();
