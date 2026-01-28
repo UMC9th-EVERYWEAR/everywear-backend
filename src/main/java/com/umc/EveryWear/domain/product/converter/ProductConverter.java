@@ -2,6 +2,7 @@ package com.umc.EveryWear.domain.product.converter;
 
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 
 public class ProductConverter {
 
@@ -35,8 +36,9 @@ public class ProductConverter {
                 .build();
     }
 
-    // Entity -> DTO (상품 조회 응답)
-    public static ProductResDTO.ListDTO toListDTO(Product product) {
+    // Entity -> DTO (상품 조회 응답) - UserProduct 기반
+    public static ProductResDTO.ListDTO toListDTO(UserProduct userProduct) {
+        Product product = userProduct.getProduct();
         return ProductResDTO.ListDTO.builder()
                 .product_id(product.getProductId())
                 .shoppingmale_name(product.getShoppingmallName())
@@ -49,6 +51,7 @@ public class ProductConverter {
                 .star_point(product.getStarPoint())
                 .AI_review(product.getAiReview())
                 .product_num(product.getProductNum())
+                .is_liked(userProduct.getIsLiked())
                 .build();
     }
 }
