@@ -8,6 +8,11 @@ import com.umc.EveryWear.domain.review.service.query.ReviewQueryService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import com.umc.EveryWear.global.apiPayload.code.BaseSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +30,113 @@ public class ReviewController {
 
     @Operation(
             summary = "리뷰 크롤링 시작",
-            description = "상품 리뷰 크롤링을 시작합니다. DB에 리뷰가 있으면 즉시 반환하고, 없으면 크롤링을 시작합니다."
+            description = """
+                    상품 리뷰 크롤링을 시작합니다.
+                    
+                    **동작 방식:**
+                    1. DB에 리뷰가 이미 있으면 즉시 반환 (캐시된 데이터)
+                    2. 리뷰가 없으면 백그라운드에서 크롤링 시작
+                    3. 크롤링이 진행 중이면 상태만 반환
+                    
+                    **응답 타입:**
+                    - `from_cache: true` → 즉시 리뷰 데이터 반환 (캐시)
+                    - `from_cache: false, status: processing` → 크롤링 진행 중 (약 30초 소요)
+                    
+                    **크롤링 진행 확인:**
+                    - `GET /api/review/{productId}` API로 크롤링 상태 확인 가능
+                    
+                    **지원 쇼핑몰:**
+                    - 무신사, 지그재그, 29CM, W컨셉
+                    """
     )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "리뷰가 이미 존재하여 즉시 반환 (캐시)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ReviewResDTO.CrawlResponseDTO.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isSuccess": true,
+                                      "code": "REVIEW200_1",
+                                      "message": "리뷰 조회 성공",
+                                      "result": {
+                                        "from_cache": true,
+                                        "status": "completed",
+                                        "total_count": 20,
+                                        "reviews": [
+                                          {
+                                            "review_id": 1,
+                                            "rating": 5,
+                                            "content": "정말 좋아요!",
+                                            "review_date": "2025.01.15",
+                                            "user_height": 170,
+                                            "user_weight": 60,
+                                            "option_text": "M 사이즈",
+                                            "images": ["https://image1.jpg", "https://image2.jpg"]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                    """)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "202",
+                    description = "리뷰 크롤링 시작됨 (백그라운드 처리 중)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isSuccess": true,
+                                      "code": "REVIEW202_1",
+                                      "message": "리뷰 크롤링이 시작되었습니다",
+                                      "result": {
+                                        "status": "processing",
+                                        "estimated_time": "30초",
+                                        "from_cache": false,
+                                        "total_count": 0,
+                                        "reviews": []
+                                      }
+                                    }
+                                    """)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "상품을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isSuccess": false,
+                                      "code": "REVIEW404_1",
+                                      "message": "상품을 찾을 수 없습니다",
+                                      "result": null
+                                    }
+                                    """)
+                    )
+            )
+    })
     @PostMapping("/crawl")
     public ApiResponse<ReviewResDTO.CrawlResponseDTO> crawlReview(
             @AuthenticationPrincipal Long userId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "리뷰 크롤링 요청 데이터",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ReviewReqDTO.CrawlReviewDTO.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "product_id": 123,
+                                      "product_url": "https://www.musinsa.com/products/5432652",
+                                      "shoppingmall_name": "무신사"
+                                    }
+                                    """)
+                    )
+            )
             @Valid @RequestBody ReviewReqDTO.CrawlReviewDTO dto
     ) {
         ReviewResDTO.CrawlResponseDTO response = reviewCommandService.startReviewCrawling(dto);
@@ -48,8 +155,78 @@ public class ReviewController {
 
     @Operation(
             summary = "리뷰 조회",
-            description = "상품의 리뷰를 조회합니다. 크롤링 상태와 함께 반환됩니다."
+            description = """
+                    상품의 리뷰를 조회합니다.
+                    
+                    **응답 상태:**
+                    - `completed`: 리뷰 데이터 있음 (크롤링 완료)
+                    - `processing`: 크롤링 진행 중 (리뷰 데이터 없음)
+                    - `failed`: 크롤링 실패
+                    - `not_started`: 크롤링 아직 시작 안 함
+                    
+                    **사용 시나리오:**
+                    1. `POST /api/review/crawl`로 크롤링 시작
+                    2. 이 API로 크롤링 상태 확인
+                    3. `status: completed`가 되면 리뷰 데이터 사용
+                    
+                    **Polling 권장 주기:**
+                    - 5초마다 확인 (최대 1분)
+                    """,
+            parameters = {
+                    @Parameter(name = "productId", description = "상품 ID", required = true)
+            }
     )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "리뷰 조회 성공 (크롤링 완료)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isSuccess": true,
+                                      "code": "REVIEW200_1",
+                                      "message": "리뷰 조회 성공",
+                                      "result": {
+                                        "status": "completed",
+                                        "total_count": 20,
+                                        "reviews": [
+                                          {
+                                            "review_id": 1,
+                                            "rating": 5,
+                                            "content": "정말 좋아요!",
+                                            "review_date": "2025.01.15",
+                                            "user_height": 170,
+                                            "user_weight": 60,
+                                            "option_text": "M 사이즈",
+                                            "images": ["https://image1.jpg"]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                    """)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "크롤링 진행 중",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isSuccess": true,
+                                      "code": "REVIEW200_2",
+                                      "message": "리뷰 크롤링 진행 중",
+                                      "result": {
+                                        "status": "processing",
+                                        "total_count": 0,
+                                        "reviews": []
+                                      }
+                                    }
+                                    """)
+                    )
+            )
+    })
     @GetMapping("/{productId}")
     public ApiResponse<ReviewResDTO.ReviewListDTO> getReviews(
             @AuthenticationPrincipal Long userId,
