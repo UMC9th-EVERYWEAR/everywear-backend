@@ -34,4 +34,8 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
     @Modifying
     @Query("UPDATE UserProduct up SET up.updatedAt = :updatedAt WHERE up.user.userId = :userId AND up.product.productId = :productId")
     void updateUpdatedAt(@Param("userId") Long userId, @Param("productId") Long productId, @Param("updatedAt") LocalDateTime updatedAt);
+    
+    // 60일 경과된 UserProduct 조회
+    @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate")
+    List<UserProduct> findExpiredUserProducts(@Param("cutoffDate") LocalDateTime cutoffDate);
 }
