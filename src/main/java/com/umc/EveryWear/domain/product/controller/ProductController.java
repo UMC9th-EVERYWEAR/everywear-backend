@@ -11,11 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Product", description = "상품 관련 API")
 @RestController
@@ -204,5 +200,23 @@ public class ProductController {
             successCode = ProductSuccessCode.CM29_PRODUCT_ADDED;
         }
         return ApiResponse.onSuccess(successCode, response);
+    }
+
+    @Operation(
+            summary = "상품 좋아요 토글",
+            description = "특정 상품에 대한 사용자의 좋아요 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다."
+    )
+    @PatchMapping("/products/{product_id}/like")
+    public ApiResponse<ProductResDTO.LikeToggleDTO> toggleProductLike(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("product_id") Long productId
+    ) {
+        ProductResDTO.LikeToggleDTO result = productCommandService.toggleProductLike(userId, productId);
+
+        ProductSuccessCode successCode = Boolean.TRUE.equals(result.getIs_liked())
+                ? ProductSuccessCode.PRODUCT_LIKE_ENABLED
+                : ProductSuccessCode.PRODUCT_LIKE_DISABLED;
+
+        return ApiResponse.onSuccess(successCode, result);
     }
 }

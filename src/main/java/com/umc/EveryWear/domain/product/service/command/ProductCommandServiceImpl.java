@@ -148,6 +148,39 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
         }
     }
+
+    @Override
+    public ProductResDTO.LikeToggleDTO toggleProductLike(Long userId, Long productId) {
+        // 상품 존재 여부 검증
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        // User 조회 (매핑이 새로 생길 수도 있으므로)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+
+        // 해당 사용자의 UserProduct 조회
+        UserProduct userProduct = userProductRepository
+                .findByUser_UserIdAndProduct_ProductId(userId, productId)
+                .orElseGet(() -> {
+                    // 매핑이 없으면 새로 생성 (기본 isLiked=false)
+                    UserProduct up = UserProduct.builder()
+                            .user(user)
+                            .product(product)
+                            .build();
+                    return userProductRepository.save(up);
+                });
+
+        // 좋아요 상태 토글
+        userProduct.toggleLike();
+
+        // JPA 변경 감지로 업데이트, 혹시 모르니 save 호출
+        UserProduct saved = userProductRepository.save(userProduct);
+
+        return ProductResDTO.LikeToggleDTO.builder()
+                .is_liked(saved.getIsLiked())
+                .build();
+    }
   
     // 무신사 상품 정보 크롤링 - FastAPI 서버 호출
     private ProductCrawlingData crawlMusinsaProduct(String url) {

@@ -31,6 +31,12 @@ public class ProductResDTO {
 
     @Getter
     @Builder
+    public static class LikeToggleDTO {
+        private Boolean is_liked;
+    }
+
+    @Getter
+    @Builder
     public static class ListDTO {
         private Long product_id;
         private String shoppingmale_name;

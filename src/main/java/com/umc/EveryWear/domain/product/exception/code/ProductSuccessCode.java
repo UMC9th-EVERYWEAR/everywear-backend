@@ -63,6 +63,12 @@ public enum ProductSuccessCode implements BaseSuccessCode {
     ETC_PRODUCTS_RETRIEVED(HttpStatus.OK,
             "200",
             "기타 상품을 조회했습니다."),
+    PRODUCT_LIKE_ENABLED(HttpStatus.OK,
+            "200",
+            "상품 좋아요가 성공적으로 활성화되었습니다."),
+    PRODUCT_LIKE_DISABLED(HttpStatus.OK,
+            "200",
+            "상품 좋아요가 성공적으로 비활성화되었습니다."),
     ;
 
     private final HttpStatus status;
