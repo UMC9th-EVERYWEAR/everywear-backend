@@ -77,20 +77,15 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         requestBody.put("shoppingmall_name", dto.getShoppingmall_name());
         requestBody.put("review_count", 20);
 
-        // ⭐ 타임아웃 없이 비동기로 요청 (Fire-and-Forget)
         webClient.post()
                 .uri(fastApiBaseUrl + "/crawler/review/crawl")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Void.class)
-                .timeout(Duration.ofSeconds(5))  // ⭐ 요청 전송만 5초 안에 되면 됨
+                .timeout(Duration.ofSeconds(5))
                 .subscribe(
-                        result -> log.info("✅ 리뷰 크롤링 요청 전송 성공: productId={}", productId),
-                        error -> {
-                            log.error("❌ 리뷰 크롤링 요청 전송 실패: productId={}, error={}", productId, error.getMessage());
-                            // 실패 시 상태 롤백
-                            product.updateReviewCrawlStatus(ReviewCrawlStatus.FAILED);
-                        }
+                        result -> log.info("리뷰 크롤링 요청 성공: productId={}", productId),
+                        error -> log.error("리뷰 크롤링 요청 실패: productId={}, error={}", productId, error.getMessage())
                 );
 
         return ReviewResDTO.CrawlResponseDTO.builder()
