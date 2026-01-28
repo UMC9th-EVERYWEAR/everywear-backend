@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "fittingHistory")
+@Table(name = "fitting_history")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
