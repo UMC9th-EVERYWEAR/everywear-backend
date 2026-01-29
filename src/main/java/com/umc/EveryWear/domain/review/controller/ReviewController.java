@@ -1,9 +1,13 @@
 package com.umc.EveryWear.domain.review.controller;
 
 import com.umc.EveryWear.domain.review.dto.AiReviewResult;
+import com.umc.EveryWear.domain.review.dto.req.ReviewReqDTO;
+import com.umc.EveryWear.domain.review.dto.res.ReviewResDTO;
+import com.umc.EveryWear.domain.review.exception.code.ReviewSuccessCode;
 import com.umc.EveryWear.domain.review.service.command.ReviewCommandService;
 import com.umc.EveryWear.domain.review.service.query.ReviewQueryService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
+import com.umc.EveryWear.global.apiPayload.code.BaseSuccessCode;
 import com.umc.EveryWear.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
