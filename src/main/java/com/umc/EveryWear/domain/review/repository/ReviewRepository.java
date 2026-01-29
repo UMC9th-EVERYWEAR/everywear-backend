@@ -10,6 +10,8 @@ import java.util.List;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+    List<Review> findByProduct_ProductId(Long productId);
+    boolean existsByProduct_ProductId(Long productId);
 
     /**
      * 특정 상품의 리뷰 내용만 조회 (AI 요약용)

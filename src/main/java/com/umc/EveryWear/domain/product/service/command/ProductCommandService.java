@@ -4,8 +4,8 @@ import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 
 public interface ProductCommandService {
-    ProductResDTO.ImportDTO importMusinsaProduct(ProductReqDTO.ImportMusinsaDTO dto);
-    ProductResDTO.ImportDTO importZigzagProduct(ProductReqDTO.ImportZigzagDTO dto);
-    ProductResDTO.ImportDTO importWconceptProduct(ProductReqDTO.WconceptImportDTO dto);
-    ProductResDTO.ImportDTO import29cmProduct(ProductReqDTO.Import29cmDTO dto);
+    ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto);
+    ProductResDTO.ImportDTO importZigzagProduct(Long userId, ProductReqDTO.ImportZigzagDTO dto);
+    ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto);
+    ProductResDTO.ImportDTO import29cmProduct(Long userId, ProductReqDTO.Import29cmDTO dto);
 }
