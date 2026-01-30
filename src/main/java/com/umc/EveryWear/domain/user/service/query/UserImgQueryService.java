@@ -40,4 +40,15 @@ public class UserImgQueryService {
                 .map(UserImgResponseDto.UserImgQuery::from)
                 .toList();
     }
+
+    /**
+     * 사용자 대표사진 조회
+     */
+    public UserImg getRepresentativeImage(Long userId) {
+        return userImgRepository
+                .findByUser_UserIdAndRepresentativeTrue(userId)
+                .orElseThrow(() ->
+                        new UserImgException(UserImgErrorCode.REPRESENTATIVE_IMAGE_NOT_FOUND)
+                );
+    }
 }

@@ -36,9 +36,7 @@ public class FittingController {
     ) {
         Long fittingId = fittingCommandService.requestFitting(
                 user.getUserId(),
-                request.productId(),
-                request.userImageUrl(),
-                request.garmentImageUrl()
+                request.productId()
         );
 
         return ApiResponse.onSuccess(
