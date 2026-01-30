@@ -6,6 +6,7 @@ import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
@@ -45,6 +46,35 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     @Value("${fastapi.base-url:http://localhost:8001}")
     private String fastApiBaseUrl;
 
+    private ShoppingMall detectShoppingMall(String url) {
+        if (url == null) return null;
+        if (url.matches("^https://www\\.musinsa\\.com/products/\\d+$") || url.matches("^https://musinsa\\.onelink\\.me/[^/]+/[^/]+.*$"))
+            return ShoppingMall.MUSINSA;
+        if (url.matches("^https://zigzag\\.kr/catalog/products/\\d+$") || url.matches("^https://s\\.zigzag\\.kr/[A-Za-z0-9]+$"))
+            return ShoppingMall.ZIGZAG;
+        if (url.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*") || url.matches("^https://29cm\\.onelink\\.me/.*$"))
+            return ShoppingMall.CM29;
+        if (url.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*") || url.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$"))
+            return ShoppingMall.WCONCEPT;
+        return null;
+    }
+
+    @Override
+    public ProductResDTO.ImportResult importProduct(Long userId, ProductReqDTO.ImportDTO dto) {
+        String productUrl = dto.getProduct_url();
+        ShoppingMall mall = detectShoppingMall(productUrl);
+        if (mall == null) {
+            throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
+        }
+        ProductResDTO.ImportDTO result = switch (mall) {
+            case MUSINSA -> importMusinsaProduct(userId, ProductReqDTO.ImportMusinsaDTO.builder().product_url(productUrl).build());
+            case ZIGZAG -> importZigzagProduct(userId, ProductReqDTO.ImportZigzagDTO.builder().product_url(productUrl).build());
+            case CM29 -> import29cmProduct(userId, ProductReqDTO.Import29cmDTO.builder().product_url(productUrl).build());
+            case WCONCEPT -> importWconceptProduct(userId, ProductReqDTO.ImportWconceptDTO.builder().product_url(productUrl).build());
+        };
+        return ProductResDTO.ImportResult.builder().dto(result).mall(mall).build();
+    }
+
     @Override
     public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
         try {
@@ -78,12 +108,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .product(existingProductByUrl)
                             .build();
                     UserProduct savedUserProduct = userProductRepository.save(userProduct);
-                    // 새로 등록한 경우 is_liked는 기본 false
                     return ProductConverter.toImportDTO(savedUserProduct, true);
                 } else {
                     // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
                     userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
-                    // 이전에 사용하던 is_liked 값을 그대로 응답
                     return ProductConverter.toImportDTO(existingUserProduct, true);
                 }
             }
@@ -114,10 +142,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                             .product(updatedProduct)
                             .build();
                     UserProduct savedUserProduct = userProductRepository.save(userProduct);
-                    // 새 매핑이므로 is_liked 기본 false
                     return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
                     return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
@@ -139,7 +165,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
+            // UserProduct에 저장
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
@@ -345,7 +371,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     UserProduct savedUserProduct = userProductRepository.save(userProduct);
                     return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
+                    // 기존 UserProduct가 있으면 updated_at만 갱신
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
                     return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
@@ -367,7 +393,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
+            // UserProduct에 저장
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
@@ -512,7 +538,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     UserProduct savedUserProduct = userProductRepository.save(userProduct);
                     return ProductConverter.toImportDTO(savedUserProduct, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트만 수행
+                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
                     userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
                     return ProductConverter.toImportDTO(existingUserProduct, true);
                 }
@@ -546,7 +572,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     UserProduct savedUserProduct = userProductRepository.save(userProduct);
                     return ProductConverter.toImportDTO(savedUserProduct, true, true);
                 } else {
-                    // 기존 UserProduct가 있으면 updated_at만 갱신하고, is_liked는 이전 값 유지
+                    // 기존 UserProduct가 있으면 updated_at만 갱신하고
                     userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
                     return ProductConverter.toImportDTO(existingUserProduct, true, true);
                 }
@@ -568,7 +594,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product savedProduct = productRepository.save(product);
             
-            // UserProduct에 저장 (신규 등록이므로 is_liked는 기본 false)
+            // UserProduct에 저장
             UserProduct userProduct = UserProduct.builder()
                     .user(user)
                     .product(savedProduct)
@@ -674,7 +700,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
 
     @Override
-    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto) {
+    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.ImportWconceptDTO dto) {
         try {
             // User 조회 (UserProduct에 저장하기 위해)
             User user = userRepository.findById(userId)

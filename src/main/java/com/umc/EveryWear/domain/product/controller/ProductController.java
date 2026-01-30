@@ -2,6 +2,7 @@ package com.umc.EveryWear.domain.product.controller;
 
 import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
+import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import com.umc.EveryWear.domain.product.exception.code.ProductSuccessCode;
 import com.umc.EveryWear.domain.product.service.command.ProductCommandService;
 import com.umc.EveryWear.domain.product.service.query.ProductQueryService;
@@ -95,111 +96,68 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "무신사 상품 등록",
+            summary = "상품 등록",
             description = "등록할 상품 url을 입력해 상품 정보를 저장합니다.\n\n" +
-                    "입력 URL 형식들 : \n\n" +
+                    "무신사 입력 URL 형식들 : \n\n" +
                     " • 웹 URL: https://www.musinsa.com/products/{상품ID}\n\n" +
                     " • 앱 URL: https://www.musinsa.com/products/{상품ID}\n\n" +
                     " • 웹 공유하기: https://musinsa.onelink.me/ANAQ/{공유코드}\n\n" +
                     " • 앱 공유하기: https://musinsa.onelink.me/ANAQ/{공유코드}\n\n" +
-                    " • 쇼핑몰 앱 공유하기: https://musinsa.onelink.me/PvkC/{공유코드}"
-    )
-    @PostMapping("/product/import/musinsa")
-    public ApiResponse<ProductResDTO.ImportDTO> importMusinsaProduct(
-            @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.ImportMusinsaDTO dto
-    ) {
-        ProductResDTO.ImportDTO response = productCommandService.importMusinsaProduct(userId, dto);
-        ProductSuccessCode successCode;
-        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
-            successCode = ProductSuccessCode.MUSINSA_PRODUCT_URL_UPDATED;
-        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
-            successCode = ProductSuccessCode.MUSINSA_PRODUCT_UPDATED;
-        } else {
-            successCode = ProductSuccessCode.MUSINSA_PRODUCT_ADDED;
-        }
-        return ApiResponse.onSuccess(successCode, response);
-    }
-
-    @Operation(
-            summary = "지그재그 상품 등록",
-            description = "등록할 상품 url을 입력해 상품 정보를 저장합니다.\n\n" +
-                    "입력 URL 형식들 : \n\n" +
+                    " • 쇼핑몰 앱 공유하기: https://musinsa.onelink.me/PvkC/{공유코드}\n\n" +
+                    "지그재그 입력 URL 형식들 : \n\n" +
                     " • 웹 URL: https://zigzag.kr/catalog/products/{상품ID}\n\n" +
                     " • 앱 URL: https://zigzag.kr/catalog/products/{상품ID}\n\n" +
                     " • 웹 공유하기: https://zigzag.kr/catalog/products/{상품ID}\n\n" +
                     " • 앱 공유하기: https://zigzag.kr/catalog/products/{상품ID}\n\n" +
-                    " • 쇼핑몰 앱 공유하기: https://s.zigzag.kr/{공유코드}"
-    )
-    @PostMapping("/product/import/zigzag")
-    public ApiResponse<ProductResDTO.ImportDTO> importZigzagProduct(
-            @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.ImportZigzagDTO dto
-    ) {
-        ProductResDTO.ImportDTO response = productCommandService.importZigzagProduct(userId, dto);
-        ProductSuccessCode successCode;
-        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
-            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_URL_UPDATED;
-        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
-            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_UPDATED;
-        } else {
-            successCode = ProductSuccessCode.ZIGZAG_PRODUCT_ADDED;
-        }
-        return ApiResponse.onSuccess(successCode, response);
-        }
-
-    @Operation(
-            summary = "W컨셉 상품 등록",
-            description = "등록할 상품 url을 입력해 상품 정보를 저장합니다.\n\n" +
-                    "입력 URL 형식들 : \n\n" +
+                    " • 쇼핑몰 앱 공유하기: https://s.zigzag.kr/{공유코드}\n\n" +
+                    "W컨셉 입력 URL 형식들 : \n\n" +
                     " • 웹 URL: https://www.wconcept.co.kr/Product/{상품ID}?entry_channel=...\n\n" +
                     " • 앱 URL: https://m.wconcept.co.kr/Product/{상품ID}?applanding=X\n\n" +
                     " • 웹 공유하기: https://www.wconcept.co.kr/Product/{상품ID}?applanding=Y\n\n" +
                     " • 앱 공유하기: https://m.wconcept.co.kr/Product/{상품ID}?applanding=Z}\n\n" +
-                    " • 쇼핑몰 앱 공유하기: https://m.wconcept.co.kr/Product/{상품ID}?applanding=Y"
+                    " • 쇼핑몰 앱 공유하기: https://m.wconcept.co.kr/Product/{상품ID}?applanding=Y\n\n" +
+                    "29cm 입력 URL 형식들 : \n\n" +
+                    " • 웹 URL: https://www.29cm.co.kr/products/{상품ID}?categoryLargeCode=...\n\n" +
+                    " • 앱 URL: https://www.29cm.co.kr/products/{상품ID}\n\n" +
+                    " • 웹 공유하기: https://29cm.onelink.me/1080201211/{공유코드}\n\n" +
+                    " • 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}\n\n" +
+                    " • 쇼핑몰 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}"
     )
-    @PostMapping("/product/import/wconcept")
-    public ApiResponse<ProductResDTO.ImportDTO> importWconceptProduct(
+    @PostMapping("/product/import")
+    public ApiResponse<ProductResDTO.ImportDTO> importProduct(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.WconceptImportDTO dto
+            @Valid @RequestBody ProductReqDTO.ImportDTO dto
     ) {
-        ProductResDTO.ImportDTO response = productCommandService.importWconceptProduct(userId, dto);
-        ProductSuccessCode successCode;
-        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
-            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_URL_UPDATED;
-        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
-            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_UPDATED;
-        } else {
-            successCode = ProductSuccessCode.WCONCEPT_PRODUCT_ADDED;
-        }
-        return ApiResponse.onSuccess(successCode, response);
-        }
+        ProductResDTO.ImportResult result = productCommandService.importProduct(userId, dto);
+        ProductSuccessCode successCode = getImportSuccessCode(result.getMall(), result.getDto());
+        return ApiResponse.onSuccess(successCode, result.getDto());
+    }
 
-    @Operation(
-        summary = "29cm 상품 등록", 
-        description = "등록할 상품 url을 입력해 상품 정보를 저장합니다.\n\n" +
-            "입력 URL 형식들 : \n\n" +
-            " • 웹 URL: https://www.29cm.co.kr/products/{상품ID}?categoryLargeCode=...\n\n" +
-            " • 앱 URL: https://www.29cm.co.kr/products/{상품ID}\n\n" +
-            " • 웹 공유하기: https://29cm.onelink.me/1080201211/{공유코드}\n\n" +
-            " • 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}\n\n" +
-            " • 쇼핑몰 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}"
-    )
-    @PostMapping("/product/import/29cm")
-    public ApiResponse<ProductResDTO.ImportDTO> import29cmProduct(
-            @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody ProductReqDTO.Import29cmDTO dto
-    ) {
-        ProductResDTO.ImportDTO response = productCommandService.import29cmProduct(userId, dto);
-        ProductSuccessCode successCode;
-        if (response.getIsUrlUpdated() != null && response.getIsUrlUpdated()) {
-            successCode = ProductSuccessCode.CM29_PRODUCT_URL_UPDATED;
-        } else if (response.getIsUpdated() != null && response.getIsUpdated()) {
-            successCode = ProductSuccessCode.CM29_PRODUCT_UPDATED;
-        } else {
-            successCode = ProductSuccessCode.CM29_PRODUCT_ADDED;
+    private ProductSuccessCode getImportSuccessCode(ShoppingMall mall, ProductResDTO.ImportDTO dto) {
+        boolean urlUpdated = Boolean.TRUE.equals(dto.getIsUrlUpdated());
+        boolean updated = Boolean.TRUE.equals(dto.getIsUpdated());
+        if (urlUpdated) {
+            return switch (mall) {
+                case MUSINSA -> ProductSuccessCode.MUSINSA_PRODUCT_URL_UPDATED;
+                case ZIGZAG -> ProductSuccessCode.ZIGZAG_PRODUCT_URL_UPDATED;
+                case CM29 -> ProductSuccessCode.CM29_PRODUCT_URL_UPDATED;
+                case WCONCEPT -> ProductSuccessCode.WCONCEPT_PRODUCT_URL_UPDATED;
+            };
         }
-        return ApiResponse.onSuccess(successCode, response);
+        if (updated) {
+            return switch (mall) {
+                case MUSINSA -> ProductSuccessCode.MUSINSA_PRODUCT_UPDATED;
+                case ZIGZAG -> ProductSuccessCode.ZIGZAG_PRODUCT_UPDATED;
+                case CM29 -> ProductSuccessCode.CM29_PRODUCT_UPDATED;
+                case WCONCEPT -> ProductSuccessCode.WCONCEPT_PRODUCT_UPDATED;
+            };
+        }
+        return switch (mall) {
+            case MUSINSA -> ProductSuccessCode.MUSINSA_PRODUCT_ADDED;
+            case ZIGZAG -> ProductSuccessCode.ZIGZAG_PRODUCT_ADDED;
+            case CM29 -> ProductSuccessCode.CM29_PRODUCT_ADDED;
+            case WCONCEPT -> ProductSuccessCode.WCONCEPT_PRODUCT_ADDED;
+        };
     }
 
     @Operation(
