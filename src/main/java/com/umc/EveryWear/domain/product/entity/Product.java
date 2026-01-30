@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.entity;
 
+import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +10,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Product {
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
