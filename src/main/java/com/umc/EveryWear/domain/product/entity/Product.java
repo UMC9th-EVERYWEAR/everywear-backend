@@ -45,9 +45,17 @@ public class Product {
 
     @Column(name = "product_num")
     private Long productNum;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_crawl_status")
+    private ReviewCrawlStatus reviewCrawlStatus;
+
     // 상품 URL 업데이트 메서드
     public void updateProductUrl(String productUrl) {
         this.productUrl = productUrl;
+    }
+
+    public void updateReviewCrawlStatus(ReviewCrawlStatus status) {
+        this.reviewCrawlStatus = status;
     }
 }
