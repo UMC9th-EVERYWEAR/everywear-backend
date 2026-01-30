@@ -2,7 +2,7 @@ package com.umc.EveryWear.domain.home.service.query;
 
 import com.umc.EveryWear.domain.home.converter.HomeConverter;
 import com.umc.EveryWear.domain.home.dto.res.HomeResDTO;
-import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -23,10 +23,10 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     @Override
     public HomeResDTO.ProductListResponse getHomeProducts(Long userId) {
         Pageable pageable = PageRequest.of(0, 6);
-        List<Product> products = userProductRepository.findTop6ProductsByUserIdOrderByUpdatedAtDesc(userId, pageable);
+        List<UserProduct> userProducts = userProductRepository.findTop6ProductsByUserIdOrderByUpdatedAtDesc(userId, pageable);
         
-        List<HomeResDTO.ProductDTO> productList = products.stream()
-                .map(HomeConverter::toProductDTO)
+        List<HomeResDTO.ProductDTO> productList = userProducts.stream()
+                .map(userProduct -> HomeConverter.toProductDTO(userProduct))
                 .collect(Collectors.toList());
 
         return HomeResDTO.ProductListResponse.builder()

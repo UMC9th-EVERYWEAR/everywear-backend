@@ -38,5 +38,9 @@ public class UserProduct extends BaseEntity {
     @OneToMany(mappedBy = "userProduct", cascade = CascadeType.ALL)
     @Builder.Default
     private List<FittingHistory> fittingHistories = new ArrayList<>();
+
+    public void toggleLike() {
+        this.isLiked = !Boolean.TRUE.equals(this.isLiked);
+    }
 }
 
