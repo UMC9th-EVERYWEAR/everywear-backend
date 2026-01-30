@@ -38,4 +38,8 @@ public interface FittingHistoryRepository extends JpaRepository<FittingHistory, 
             @Param("userId") Long userId
     );
 
+    /**
+     * 최근 6건 피팅내역 조회
+     */
+    List<FittingHistory> findTop6ByUserProduct_User_UserIdOrderByCreatedAtDesc(Long userId);
 }
