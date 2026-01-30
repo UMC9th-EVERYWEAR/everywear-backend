@@ -26,8 +26,8 @@ public class FittingController {
      * 가상 피팅 API
      */
     @Operation(
-            summary = "가상 피팅",
-            description = "사용자의 대표"
+            summary = "가상 피팅 by 임준서(개발 완료)",
+            description = "사용자의 대표사진에 상품 사진을 피팅합니다"
     )
     @PostMapping("/try-on")
     public ApiResponse<FittingResponseDto.FittingApplyResult> requestFitting(
@@ -50,6 +50,10 @@ public class FittingController {
     /**
      * 내 피팅 목록 조회
      */
+    @Operation(
+            summary = "피팅 목록 조회 by 임준서(개발 완료)",
+            description = "사용자의 피팅 목록을 조회합니다."
+    )
     @GetMapping
     public ApiResponse<List<FittingResponseDto.FittingSummary>> getMyFittings(
             @AuthenticationPrincipal Long userId
@@ -63,6 +67,10 @@ public class FittingController {
     /**
      * 피팅 상세 조회
      */
+    @Operation(
+            summary = "피팅 상세 조회 by 임준서(개발 완료)",
+            description = "피팅 내역 상세 정보를 조회합니다."
+    )
     @GetMapping("/{fittingId}")
     public ApiResponse<FittingResponseDto.FittingDetail> getFittingDetail(
             @AuthenticationPrincipal Long userId,

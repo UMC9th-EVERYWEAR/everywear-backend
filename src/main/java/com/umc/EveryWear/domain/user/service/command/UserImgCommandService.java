@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserImgCommandService {
 
+    private static final int MAX_IMAGE_COUNT = 5;
+
     private final GeminiImageClient geminiImageClient;
     private final UserImgRepository userImgRepository;
     private final S3Uploader s3Uploader;
@@ -33,7 +35,15 @@ public class UserImgCommandService {
             User user,
             byte[] imageBytes
     ) {
-        // AI 이미지 검증
+        // 1. 이미지 개수 제한
+        long imageCount =
+                userImgRepository.countByUser_UserId(user.getUserId());
+
+        if (imageCount >= MAX_IMAGE_COUNT) {
+            throw new UserImgException(UserImgErrorCode.USER_IMAGE_LIMIT_EXCEEDED);
+        }
+
+        // 2. AI 이미지 검증
         VerificationResult verification =
                 geminiImageClient.verifyUserImage(imageBytes);
 
@@ -43,20 +53,48 @@ public class UserImgCommandService {
                     verification.reason());
         }
 
-        // 2. S3 업로드
+        // 3. S3 업로드
         String imageUrl = s3Uploader.upload(
                 imageBytes,
                 "user-profile"
         );
 
-        // 3. UserImg 저장
-        UserImg userImg = userImgRepository.save(
-                UserImg.builder()
-                        .user(user)
-                        .imageUrl(imageUrl)
-                        .build()
-        );
+        // 4. 대표사진 여부 결정
+        boolean hasRepresentative =
+                userImgRepository
+                        .findByUser_UserIdAndRepresentativeTrue(user.getUserId())
+                        .isPresent();
+
+        UserImg userImg = UserImg.builder()
+                .user(user)
+                .imageUrl(imageUrl)
+                .representative(!hasRepresentative)
+                .build();
+
+        userImgRepository.save(userImg);
 
         return userImg.getProfileImageId();
+    }
+
+    /**
+     * 대표 이미지 선택
+     */
+    public void selectRepresentativeImage(
+            User user,
+            Long userImgId
+    ) {
+        // 1. 선택한 이미지 검증
+        UserImg targetImg = userImgRepository.findById(userImgId)
+                .filter(img -> img.getUser().getUserId().equals(user.getUserId()))
+                .orElseThrow(() ->
+                        new UserImgException(UserImgErrorCode.USER_IMAGE_NOT_FOUND)
+                );
+
+        // 2. 기존 대표 이미지 해제
+        userImgRepository.findByUser_UserIdAndRepresentativeTrue(user.getUserId())
+                .ifPresent(UserImg::cancelRepresentative);
+
+        // 3. 새 대표 이미지 지정
+        targetImg.makeRepresentative();
     }
 }
