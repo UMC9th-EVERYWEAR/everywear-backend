@@ -21,26 +21,21 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
     public ProductResDTO.ProductListResponse getAllProductsByUserId(Long userId) {
         List<UserProduct> userProducts = userProductRepository.findAllProductsByUserIdOrderByUpdatedAtDesc(userId);
-        
-        List<ProductResDTO.ListDTO> productList = userProducts.stream()
-                .map(ProductConverter::toListDTO)
-                .collect(Collectors.toList());
-
-        return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
-                .build();
+        return toProductListResponse(userProducts);
     }
 
     @Override
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
         List<UserProduct> userProducts = userProductRepository.findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
-        
-        List<ProductResDTO.ListDTO> productList = userProducts.stream()
+        return toProductListResponse(userProducts);
+    }
+
+    private static ProductResDTO.ProductListResponse toProductListResponse(List<UserProduct> userProducts) {
+        List<ProductResDTO.ListDTO> products = userProducts.stream()
                 .map(ProductConverter::toListDTO)
                 .collect(Collectors.toList());
-
         return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
+                .products(products)
                 .build();
     }
 }

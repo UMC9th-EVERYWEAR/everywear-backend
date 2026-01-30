@@ -17,7 +17,7 @@ public class ProductReqDTO {
     @Schema(description = "상품 등록 요청 (무신사/지그재그/29cm/W컨셉 URL 자동 감지)")
     public static class ImportDTO {
         @NotBlank(message = "상품 URL은 필수입니다.")
-        @Schema(description = "상품 URL (무신사, 지그재그, 29cm, W컨셉 중 하나)", example = "https://www.musinsa.com/products/12345")
+        @Schema(description = "상품 URL (무신사, 지그재그, 29cm, W컨셉 중 하나)", example = "string")
         private String product_url;
     }
 
