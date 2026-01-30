@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class FittingResponseDto {
 
     /**
-     * 피팅 목록 / 좋아요 목록 공통 요약 DTO
+     * 피팅 목록 요약 DTO
      */
     public record FittingSummary(
             Long fittingId,
@@ -30,7 +30,6 @@ public class FittingResponseDto {
      * 피팅 적용 결과 DTO
      */
     public record FittingApplyResult(
-            Long fittingId,
-            String fittingResultImage
+            Long fittingId
     ) {}
 }

@@ -20,21 +20,11 @@ public class FittingQueryService {
     private final FittingHistoryRepository fittingHistoryRepository;
 
     /**
-     * 내 피팅 목록 조회 (최신순)
+     * 내 피팅 목록 조회
      */
-    public List<FittingResponseDto.FittingSummary> getMyFittings(User user) {
-        return fittingHistoryRepository.findByUserOrderByCreatedAtDesc(user)
-                .stream()
-                .map(this::toSummary)
-                .toList();
-    }
-
-    /**
-     * 좋아요한 피팅 목록 조회 (최신순)
-     */
-    public List<FittingResponseDto.FittingSummary> getLikedFittings(User user) {
-        return fittingHistoryRepository
-                .findByUserAndIsLikedTrueOrderByCreatedAtDesc(user)
+    public List<FittingResponseDto.FittingSummary> getMyFittings(Long userId) {
+        return fittingHistoryRepository.
+                findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::toSummary)
                 .toList();
@@ -44,11 +34,11 @@ public class FittingQueryService {
      * 피팅 상세 조회
      */
     public FittingResponseDto.FittingDetail getFittingDetail(
-            User user,
+            Long userId,
             Long fittingId
     ) {
         FittingHistory history = fittingHistoryRepository
-                .findByFittingIdAndUser(fittingId, user)
+                .findByFittingIdAndUserId(fittingId, userId)
                 .orElseThrow(() ->
                         new FittingException(FittingErrorCode.FITTING_HISTORY_NOT_FOUND)
                 );
@@ -56,9 +46,9 @@ public class FittingQueryService {
         return new FittingResponseDto.FittingDetail(
                 history.getFittingId(),
                 history.getFittingResultImage(),
-                history.getIsLiked(),
-                history.getProduct().getProductName(),
-                history.getProduct().getCategory(),
+                history.getUserProduct().getIsLiked(),
+                history.getUserProduct().getProduct().getProductName(),
+                history.getUserProduct().getProduct().getCategory(),
                 history.getCreatedAt()
         );
     }
@@ -67,7 +57,7 @@ public class FittingQueryService {
         return new FittingResponseDto.FittingSummary(
                 h.getFittingId(),
                 h.getFittingResultImage(),
-                h.getIsLiked(),
+                h.getUserProduct().getIsLiked(),
                 h.getCreatedAt()
         );
     }

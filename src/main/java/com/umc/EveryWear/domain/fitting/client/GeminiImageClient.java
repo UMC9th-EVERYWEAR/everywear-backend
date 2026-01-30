@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.fitting.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
@@ -7,10 +8,11 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
 import com.umc.EveryWear.domain.fitting.dto.internal.VerificationResult;
-import com.umc.EveryWear.domain.fitting.dto.res.FittingResponseDto;
 import com.umc.EveryWear.domain.fitting.exception.FittingException;
 import com.umc.EveryWear.domain.fitting.exception.code.FittingErrorCode;
+import com.umc.EveryWear.global.s3.S3Uploader;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +21,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class GeminiImageClient {
 
     private final Client geminiClient;
     private final ObjectMapper objectMapper;
+    private final ImageDownloader imageDownloader;
+    private final S3Uploader s3Uploader;
 
     @Value("${gemini.api.key}")
     private String apiKey;
@@ -42,6 +47,11 @@ public class GeminiImageClient {
                 4. OBSTRUCTIONS: Are there objects (bags, coats, hands) covering the primary areas where new clothes would be placed?
                 5. LIGHTING: Is the lighting sufficient to distinguish the person from the background?
                 
+                IMPORTANT:
+                - Output MUST be a valid JSON object.
+                - Do NOT include markdown, explanations, or extra text.
+                - Do NOT wrap the JSON in ``` blocks.
+                
                 ### OUTPUT FORMAT (JSON ONLY):
                 {
                   "isSuitable": boolean,
@@ -59,31 +69,38 @@ public class GeminiImageClient {
 
             GenerateContentResponse response =
                     geminiClient.models.generateContent(
-                            "gemini-3-pro",
+                            "gemini-3-pro-preview",
                             Content.fromParts(Part.fromBytes(imageBytes, "image/jpeg")),
                             config
                     );
 
             String json = response.text();
+
             if (json == null || json.isBlank()) {
                 throw new FittingException(FittingErrorCode.AI_RESPONSE_EMPTY);
             }
 
             return objectMapper.readValue(json, VerificationResult.class);
 
-        } catch (FittingException e) {
-            throw e;
+        } catch (JsonProcessingException e) {
+            throw new FittingException(FittingErrorCode.AI_RESPONSE_INVALID_FORMAT);
         } catch (Exception e) {
             throw new FittingException(FittingErrorCode.AI_VERIFICATION_FAILED);
         }
     }
 
-    // 2. [피팅 전용] 이미지 결과물(바이너리)을 원하는 설정
-    public byte[] generateFittingImage(
-            byte[] personImage,
-            byte[] garmentImage,
+    /**
+     * 이미지 생성
+     */
+    public String generateFittingImage(
+            String userImageUrl,
+            String garmentImageUrl,
             String categoryPrompt
     ) {
+
+        byte[] personImageBytes = imageDownloader.download(userImageUrl);
+        byte[] garmentImageBytes = imageDownloader.download(garmentImageUrl);
+
         String systemInstruction =
                 "You are the Nano Banana Virtual Try-on Engine. Output ONLY the final rendered image.";
 
@@ -99,19 +116,21 @@ public class GeminiImageClient {
                             "gemini-3-pro-image-preview",
                             Content.fromParts(
                                     Part.fromText("Target Person"),
-                                    Part.fromBytes(personImage, "image/jpeg"),
+                                    Part.fromBytes(personImageBytes, "image/jpeg"),
                                     Part.fromText("Garment"),
-                                    Part.fromBytes(garmentImage, "image/jpeg"),
+                                    Part.fromBytes(garmentImageBytes, "image/jpeg"),
                                     Part.fromText("Instruction: " + categoryPrompt)
                             ),
                             config
                     );
 
-            return response.parts().stream()
+            byte[] resultImageBytes =
+                    response.parts().stream()
                     .flatMap(p -> p.inlineData().stream())
                     .findFirst()
                     .map(d -> d.data().get())
                     .orElseThrow(() -> new FittingException(FittingErrorCode.AI_RESPONSE_EMPTY));
+            return s3Uploader.upload(resultImageBytes, "fitting-result");
 
         } catch (FittingException e) {
             throw e;

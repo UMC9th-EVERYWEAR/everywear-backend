@@ -18,8 +18,16 @@ public class TopFittingStrategy implements FittingStrategy {
     @Override
     public String buildPrompt() {
         return """
-            Replace the upper-body clothing of the person with the provided garment image.
-            Preserve pose, lighting, and body proportions.
+                Replace only the upper-body clothing of the person with the provided garment image.
+                
+                Accurately fit the garment to the person’s torso, shoulders, and arms while strictly preserving:
+                - the original body pose and posture
+                - body proportions and anatomy
+                - facial features, hair, and skin texture
+                - lighting direction, intensity, and color temperature
+                
+                Ensure natural fabric alignment, realistic folds, and correct garment boundaries.
+                Do not alter the background, lower-body clothing, or overall image composition.
             """;
     }
 }

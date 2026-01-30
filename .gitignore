@@ -17,6 +17,7 @@ out/
 
 # OS
 .DS_Store
+.env
 
 # NetBeans
 /nbproject/private/

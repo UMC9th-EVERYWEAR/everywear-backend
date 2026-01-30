@@ -7,9 +7,11 @@ import java.util.Arrays;
 
 /**
  * ClothingCategory 열거형은 의류의 카테고리를 정의합니다.
- * 각 카테고리는 의류의 종류를 나타내며, 문자열로부터 해당 카테고리를 매핑하는 기능을 제공합니다.
+ * 각 카테고리는 의류의 종류를 나타내며,
+ * 상품 정보에 저장된 카테고리 문자열로부터 해당 카테고리를 매핑하는 기능을 제공합니다.
  */
-public enum ClothingCategory {
+public enum
+ClothingCategory {
     TOP,
     BOTTOM,
     OUTER,

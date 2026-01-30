@@ -8,6 +8,7 @@ import com.umc.EveryWear.domain.user.entity.UserImg;
 import com.umc.EveryWear.domain.user.exception.UserImgException;
 import com.umc.EveryWear.domain.user.exception.code.UserImgErrorCode;
 import com.umc.EveryWear.domain.user.repository.UserImgRepository;
+import com.umc.EveryWear.global.s3.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class UserImgCommandService {
 
     private final GeminiImageClient geminiImageClient;
     private final UserImgRepository userImgRepository;
+    private final S3Uploader s3Uploader;
 
     /**
      * 사용자 이미지 검증 후 저장
@@ -36,14 +38,22 @@ public class UserImgCommandService {
                 geminiImageClient.verifyUserImage(imageBytes);
 
         if (!verification.isSuitable()) {
-            throw new UserImgException(UserImgErrorCode.INVALID_USER_IMAGE);
+            throw new UserImgException(
+                    UserImgErrorCode.INVALID_USER_IMAGE,
+                    verification.reason());
         }
 
-        // UserImg 저장 (임시 imageUrl)
+        // 2. S3 업로드
+        String imageUrl = s3Uploader.upload(
+                imageBytes,
+                "user-profile"
+        );
+
+        // 3. UserImg 저장
         UserImg userImg = userImgRepository.save(
                 UserImg.builder()
                         .user(user)
-                        .imageUrl("TEMP_IMAGE_URL")
+                        .imageUrl(imageUrl)
                         .build()
         );
 

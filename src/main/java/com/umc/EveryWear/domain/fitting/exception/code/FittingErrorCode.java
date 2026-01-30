@@ -92,7 +92,13 @@ public enum FittingErrorCode implements BaseErrorCode {
             HttpStatus.INTERNAL_SERVER_ERROR,
             "FITTING500_9",
             "알 수 없는 오류가 발생했습니다."
-    ),;
+    ),
+    AI_RESPONSE_INVALID_FORMAT(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "FITTING500_10",
+            "AI 응답 형식이 올바르지 않습니다."
+    )
+    ;
 
     private final HttpStatus status;
     private final String code;

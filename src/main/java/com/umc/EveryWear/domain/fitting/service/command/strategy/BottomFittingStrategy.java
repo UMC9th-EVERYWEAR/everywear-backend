@@ -18,8 +18,16 @@ public class BottomFittingStrategy implements FittingStrategy {
     @Override
     public String buildPrompt() {
         return """
-            Replace the lower-body clothing of the person with the provided garment image.
-            Preserve pose, lighting, and lighting consistency.
+                Replace only the lower-body clothing of the person with the provided garment image.
+                
+                    Precisely align the garment to the hips, waist, and legs while strictly preserving:
+                    - the original body pose and stance
+                    - body proportions and leg geometry
+                    - upper-body clothing, face, and hairstyle
+                    - lighting direction, intensity, and overall lighting consistency
+                
+                    Maintain realistic fabric draping, shadows, and garment edges.
+                    Do not modify the background, upper-body clothing, or camera perspective.
             """;
     }
 }
