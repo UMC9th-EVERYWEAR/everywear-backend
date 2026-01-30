@@ -7,18 +7,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
+    // 전역 상품 조회 (user_id 무관)
     Optional<Product> findByProductUrl(String productUrl);
-    
-    // updatedAt 내림차순으로 모든 상품 조회
-    List<Product> findAllByOrderByUpdatedAtDesc();
-    
-    // updatedAt을 현재 시간으로 업데이트
-    @Modifying
-    @Query("UPDATE Product p SET p.updatedAt = CURRENT_TIMESTAMP WHERE p.productId = :productId")
-    void updateUpdatedAt(@Param("productId") Long productId);
+    Optional<Product> findByProductNum(Long productNum);
 }

@@ -1,6 +1,5 @@
 package com.umc.EveryWear.domain.product.entity;
 
-import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Product extends BaseEntity {
+public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,4 +42,12 @@ public class Product extends BaseEntity {
 
     @Column(name = "AI_review", columnDefinition = "TEXT")
     private String aiReview;
+
+    @Column(name = "product_num")
+    private Long productNum;
+    
+    // 상품 URL 업데이트 메서드
+    public void updateProductUrl(String productUrl) {
+        this.productUrl = productUrl;
+    }
 }

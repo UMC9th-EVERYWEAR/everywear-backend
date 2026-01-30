@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.user.service;
 
+import com.umc.EveryWear.domain.user.dto.GoogleUserInfo;
 import com.umc.EveryWear.domain.user.dto.KakaoUserInfo;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.enums.SocialType;
@@ -34,30 +35,61 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         log.info("OAuth2 Login - Provider: {}", registrationId);
         log.info("OAuth2 User Attributes: {}", attributes);
 
+        User user;
+
         // 카카오 로그인 처리
         if ("kakao".equals(registrationId)) {
             KakaoUserInfo kakaoUserInfo = KakaoUserInfo.from(attributes);
-            User user = saveOrUpdate(kakaoUserInfo);
-
-            return new CustomOAuth2User(user, attributes);
+            user = saveOrUpdateKakao(kakaoUserInfo);
+        }
+        // 구글 로그인 처리
+        else if ("google".equals(registrationId)) {
+            GoogleUserInfo googleUserInfo = GoogleUserInfo.from(attributes);
+            user = saveOrUpdateGoogle(googleUserInfo);
+        }
+        else {
+            throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
         }
 
-        throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+        return new CustomOAuth2User(user, attributes);
     }
 
-    private User saveOrUpdate(KakaoUserInfo kakaoUserInfo) {
+    private User saveOrUpdateKakao(KakaoUserInfo kakaoUserInfo) {
         User user = userRepository.findByOauthIdAndSocialType(
                 kakaoUserInfo.getOauthId(),
                 SocialType.KAKAO
         ).orElse(null);
 
         if (user == null) {
-            // 신규 사용자 등록
             user = User.builder()
                     .oauthId(kakaoUserInfo.getOauthId())
                     .name(kakaoUserInfo.getNickname())
                     .email(kakaoUserInfo.getEmail())
                     .socialType(SocialType.KAKAO)
+                    .isActive(UserStatus.ACTIVE)
+                    .refreshToken("")
+                    .isAgreed(false)
+                    .alarmOnoff(true)
+                    .build();
+
+            return userRepository.save(user);
+        }
+
+        return user;
+    }
+
+    private User saveOrUpdateGoogle(GoogleUserInfo googleUserInfo) {
+        User user = userRepository.findByOauthIdAndSocialType(
+                googleUserInfo.getOauthId(),
+                SocialType.GOOGLE
+        ).orElse(null);
+
+        if (user == null) {
+            user = User.builder()
+                    .oauthId(googleUserInfo.getOauthId())
+                    .name(googleUserInfo.getName())
+                    .email(googleUserInfo.getEmail())
+                    .socialType(SocialType.GOOGLE)
                     .isActive(UserStatus.ACTIVE)
                     .refreshToken("")
                     .isAgreed(false)

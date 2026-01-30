@@ -65,6 +65,7 @@ public class FittingController {
                 fittingQueryService.getFittingDetail(user, fittingId)
         );
     }
+}
 
     /**
      * 피팅 좋아요 토글
