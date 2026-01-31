@@ -32,7 +32,7 @@ public class ProductCleanupScheduler {
             LocalDateTime cutoffDate = LocalDateTime.now().minusDays(EXPIRATION_DAYS);
             log.info("60일 경과된 UserProduct 삭제 작업 시작. 기준 날짜: {}", cutoffDate);
             
-            List<UserProduct> expiredProducts = userProductRepository.findExpiredUserProducts(cutoffDate);
+            List<UserProduct> expiredProducts = userProductRepository.findAllByUpdatedAtBefore(cutoffDate);
             
             if (expiredProducts.isEmpty()) {
                 log.info("삭제할 만료된 UserProduct가 없습니다.");

@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum HomeSuccessCode implements BaseSuccessCode {
 
     HOME_PRODUCTS_RETRIEVED(HttpStatus.OK,
-            "200",
+            "COMMON200",
             "홈 화면 상품을 조회했습니다."),
     RECENT_FITTINGS_FETCHED(
             HttpStatus.OK,

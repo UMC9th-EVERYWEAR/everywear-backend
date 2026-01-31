@@ -19,28 +19,23 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     private final UserProductRepository userProductRepository;
 
     @Override
-    public ProductResDTO.ProductListResponse getAllProductsByUserId(Long userId) {
-        List<UserProduct> userProducts = userProductRepository.findAllProductsByUserIdOrderByUpdatedAtDesc(userId);
-        
-        List<ProductResDTO.ListDTO> productList = userProducts.stream()
-                .map(ProductConverter::toListDTO)
-                .collect(Collectors.toList());
-
-        return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
-                .build();
+    public ProductResDTO.ProductListResponse getAllProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdOrderByUpdatedAtDesc(userId);
+        return toProductListResponse(userProducts);
     }
 
     @Override
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
-        List<UserProduct> userProducts = userProductRepository.findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
-        
-        List<ProductResDTO.ListDTO> productList = userProducts.stream()
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
+        return toProductListResponse(userProducts);
+    }
+
+    private static ProductResDTO.ProductListResponse toProductListResponse(List<UserProduct> userProducts) {
+        List<ProductResDTO.ListDTO> products = userProducts.stream()
                 .map(ProductConverter::toListDTO)
                 .collect(Collectors.toList());
-
         return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
+                .products(products)
                 .build();
     }
 }

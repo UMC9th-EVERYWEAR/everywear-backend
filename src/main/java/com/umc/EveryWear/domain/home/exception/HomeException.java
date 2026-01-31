@@ -1,7 +1,10 @@
 package com.umc.EveryWear.domain.home.exception;
 
-public class HomeException extends RuntimeException {
-    public HomeException(String message) {
-        super(message);
+import com.umc.EveryWear.global.apiPayload.code.BaseErrorCode;
+import com.umc.EveryWear.global.exception.GeneralException;
+
+public class HomeException extends GeneralException {
+    public HomeException(BaseErrorCode code) {
+        super(code);
     }
 }
