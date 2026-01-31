@@ -33,9 +33,6 @@ public class ProductController {
             @AuthenticationPrincipal Long userId
     ) {
         ProductResDTO.ProductListResponse response = productQueryService.getAllProducts(userId);
-        if (response.getProducts() == null || response.getProducts().isEmpty()) {
-            return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED_EMPTY, null);
-        }
         return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED, response);
     }
 
@@ -71,9 +68,6 @@ public class ProductController {
 
     private ApiResponse<ProductResDTO.ProductListResponse> getCategoryProductsResponse(Long userId, ProductCategory category) {
         ProductResDTO.ProductListResponse response = productQueryService.getProductsByCategory(userId, category.getValue());
-        if (response.getProducts() == null || response.getProducts().isEmpty()) {
-            return ApiResponse.onSuccess(ProductSuccessCode.PRODUCTS_RETRIEVED_EMPTY, null);
-        }
         return ApiResponse.onSuccess(category.getSuccessCode(), response);
     }
 

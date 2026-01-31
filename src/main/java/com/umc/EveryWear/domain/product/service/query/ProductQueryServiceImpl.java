@@ -31,7 +31,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     private static ProductResDTO.ProductListResponse toProductListResponse(List<UserProduct> userProducts) {
-        List<ProductResDTO.ListDTO> products = userProducts.stream()
+        List<ProductResDTO.ListDTO> products = userProducts.isEmpty()
+                ? null
+                : userProducts.stream()
                 .map(ProductConverter::toListDTO)
                 .collect(Collectors.toList());
         return ProductResDTO.ProductListResponse.builder()
