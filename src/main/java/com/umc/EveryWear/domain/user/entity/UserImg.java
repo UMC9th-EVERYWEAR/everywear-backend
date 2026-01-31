@@ -22,4 +22,17 @@ public class UserImg {
 
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
+
+    @Column(name = "is_representative", nullable = false)
+    private boolean representative;
+
+    /* === 도메인 로직 === */
+
+    public void makeRepresentative() {
+        this.representative = true;
+    }
+
+    public void cancelRepresentative() {
+        this.representative = false;
+    }
 }

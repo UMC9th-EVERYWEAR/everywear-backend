@@ -50,3 +50,7 @@ jwt:
 
 kakao:
   admin-key: ${KAKAO_ADMIN_KEY}
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY}
