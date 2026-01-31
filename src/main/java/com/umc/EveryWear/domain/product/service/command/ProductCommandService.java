@@ -8,4 +8,5 @@ public interface ProductCommandService {
     ProductResDTO.ImportDTO importZigzagProduct(Long userId, ProductReqDTO.ImportZigzagDTO dto);
     ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto);
     ProductResDTO.ImportDTO import29cmProduct(Long userId, ProductReqDTO.Import29cmDTO dto);
+    ProductResDTO.LikeToggleDTO toggleProductLike(Long userId, Long productId);
 }

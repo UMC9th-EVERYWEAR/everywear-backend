@@ -15,6 +15,9 @@ public enum ProductErrorCode implements BaseErrorCode {
     INVALID_URL_FORMAT(HttpStatus.BAD_REQUEST,
             "400",
             "지원되지 않는 url 형식입니다."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND,
+            "404",
+            "수정하려는 상품을 찾을 수 없습니다."),
     ;
 
     private final HttpStatus status;
