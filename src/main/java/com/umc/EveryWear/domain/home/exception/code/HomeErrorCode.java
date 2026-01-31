@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum HomeErrorCode implements BaseErrorCode {
 
     HOME_PRODUCTS_FETCH_FAILED(HttpStatus.BAD_REQUEST,
-            "COMMON400",
+            "HOME400",
             "홈 상품 조회에 실패했습니다."),
     ;
 
