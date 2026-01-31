@@ -42,11 +42,11 @@ public class HomeController {
     )
     @GetMapping("/recent-fittings")
     public ApiResponse<List<FittingResponseDto.FittingSummary>> getRecentFittings(
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal Long userId
     ) {
         return ApiResponse.onSuccess(
                 HomeSuccessCode.RECENT_FITTINGS_FETCHED,
-                homeQueryService.getRecentFittings(user.getUserId())
+                homeQueryService.getRecentFittings(userId)
         );
     }
 }

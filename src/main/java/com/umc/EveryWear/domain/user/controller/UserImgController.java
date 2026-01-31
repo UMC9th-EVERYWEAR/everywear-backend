@@ -33,7 +33,7 @@ public class UserImgController {
     )
     public ApiResponse<Long> verifyAndSave(
             @RequestPart("image") MultipartFile image,
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal Long userId
     ) {
         byte[] imageBytes;
         try {
@@ -43,7 +43,7 @@ public class UserImgController {
         }
 
         Long userImgId =
-                userImgCommandService.verifyAndSave(user, imageBytes);
+                userImgCommandService.verifyAndSave(userId, imageBytes);
 
         return ApiResponse.onSuccess(
                 UserImgSuccessCode.USER_IMAGE_SAVED,
@@ -61,9 +61,9 @@ public class UserImgController {
     @PostMapping("/{userImgId}/representative")
     public ApiResponse<Void> selectRepresentative(
             @PathVariable Long userImgId,
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal Long userId
     ) {
-        userImgCommandService.selectRepresentativeImage(user, userImgId);
+        userImgCommandService.selectRepresentativeImage(userId, userImgId);
 
         return ApiResponse.onSuccess(
                 UserImgSuccessCode.REPRESENTATIVE_IMAGE_UPDATED,

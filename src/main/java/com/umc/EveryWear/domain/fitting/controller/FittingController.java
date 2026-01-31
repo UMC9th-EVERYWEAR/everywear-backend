@@ -31,11 +31,11 @@ public class FittingController {
     )
     @PostMapping("/try-on")
     public ApiResponse<FittingResponseDto.FittingApplyResult> requestFitting(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal Long userId,
             @RequestBody FittingRequestDto.FittingRequest request
     ) {
         Long fittingId = fittingCommandService.requestFitting(
-                user.getUserId(),
+                userId,
                 request.productId()
         );
 
