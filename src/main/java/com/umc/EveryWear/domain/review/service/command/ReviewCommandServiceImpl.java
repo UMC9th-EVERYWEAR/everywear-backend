@@ -31,7 +31,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
     private final ProductRepository productRepository;
     private final WebClient webClient;
 
-    @Value("${fastapi.base-url:http://localhost:8001}")
+    @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
 
     @Override

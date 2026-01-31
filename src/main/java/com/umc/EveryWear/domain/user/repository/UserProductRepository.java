@@ -14,10 +14,10 @@ import java.util.Optional;
 
 @Repository
 public interface UserProductRepository extends JpaRepository<UserProduct, Long> {
-    
-    // 사용자별 상품 조회 (updatedAt 내림차순)
+
+    // 사용자별 상품 전체 조회 (updatedAt 내림차순)
     @Query("SELECT up FROM UserProduct up WHERE up.user.userId = :userId ORDER BY up.updatedAt DESC")
-    List<UserProduct> findAllProductsByUserIdOrderByUpdatedAtDesc(@Param("userId") Long userId);
+    List<UserProduct> findAllByUserIdOrderByUpdatedAtDesc(@Param("userId") Long userId);
 
     // 사용자별 좋아요한 상품 조회 (updatedAt 내림차순)
     @Query("SELECT up FROM UserProduct up WHERE up.user.userId = :userId AND up.isLiked = true ORDER BY up.updatedAt DESC")
@@ -26,24 +26,24 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
     // 사용자별 좋아요한 상품 중 카테고리별 조회 (updatedAt 내림차순)
     @Query("SELECT up FROM UserProduct up WHERE up.user.userId = :userId AND up.isLiked = true AND up.product.category = :category ORDER BY up.updatedAt DESC")
     List<UserProduct> findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(@Param("userId") Long userId, @Param("category") String category);
-    
+
     // 사용자별 카테고리별 상품 조회 (updatedAt 내림차순)
     @Query("SELECT up FROM UserProduct up WHERE up.user.userId = :userId AND up.product.category = :category ORDER BY up.updatedAt DESC")
-    List<UserProduct> findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(@Param("userId") Long userId, @Param("category") String category);
-    
-    // 사용자별 상품 조회 상위 6개 (updatedAt 내림차순)
+    List<UserProduct> findAllByUserIdAndCategoryOrderByUpdatedAtDesc(@Param("userId") Long userId, @Param("category") String category);
+
+    // 사용자별 상품 상위 N개 조회 (updatedAt 내림차순, Pageable로 개수 지정)
     @Query("SELECT up FROM UserProduct up WHERE up.user.userId = :userId ORDER BY up.updatedAt DESC")
-    List<UserProduct> findTop6ProductsByUserIdOrderByUpdatedAtDesc(@Param("userId") Long userId, Pageable pageable);
-    
+    List<UserProduct> findTop6ByUserIdOrderByUpdatedAtDesc(@Param("userId") Long userId, Pageable pageable);
+
     // 특정 사용자와 상품으로 UserProduct 조회
     Optional<UserProduct> findByUser_UserIdAndProduct_ProductId(Long userId, Long productId);
-    
+
     // updatedAt을 현재 시간으로 업데이트
     @Modifying
     @Query("UPDATE UserProduct up SET up.updatedAt = :updatedAt WHERE up.user.userId = :userId AND up.product.productId = :productId")
     void updateUpdatedAt(@Param("userId") Long userId, @Param("productId") Long productId, @Param("updatedAt") LocalDateTime updatedAt);
-    
+
     // 60일 경과된 UserProduct 조회
     @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate")
-    List<UserProduct> findExpiredUserProducts(@Param("cutoffDate") LocalDateTime cutoffDate);
+    List<UserProduct> findAllByUpdatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

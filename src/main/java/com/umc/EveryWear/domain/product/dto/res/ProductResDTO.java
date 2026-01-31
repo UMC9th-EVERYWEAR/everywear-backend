@@ -1,6 +1,7 @@
 package com.umc.EveryWear.domain.product.dto.res;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -27,6 +28,13 @@ public class ProductResDTO {
         private Boolean isUpdated;
         @JsonIgnore
         private Boolean isUrlUpdated;
+    }
+    
+    @Getter
+    @Builder
+    public static class ImportResult {
+        private ImportDTO dto;
+        private ShoppingMall mall;
     }
 
     @Getter
