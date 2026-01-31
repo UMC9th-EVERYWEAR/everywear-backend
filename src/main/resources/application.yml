@@ -75,3 +75,7 @@ kakao:
 
 fastapi:
   base-url: ${FASTAPI_BASE_URL}
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY}
