@@ -34,7 +34,7 @@ public class ClosetController {
 
     @Operation(
             summary = "내 옷장 상의 상품 조회",
-            description = "is_liked가 true인 상의(category=상의) 상품 전체를 최신 업데이트 순(update_at 내림차순)으로 조회합니다. 등록한 상품이 없으면 products는 null입니다."
+            description = "내 옷장 상의 상품을 최신순으로 조회합니다."
     )
     @GetMapping("/top")
     public ApiResponse<ClosetResDTO.ProductListResponse> getClosetTopProducts(
@@ -46,7 +46,7 @@ public class ClosetController {
 
     @Operation(
             summary = "내 옷장 하의 상품 조회",
-            description = "is_liked가 true인 하의(category=하의) 상품 전체를 최신 업데이트 순(update_at 내림차순)으로 조회합니다. 등록한 상품이 없으면 products는 null입니다."
+            description = "내 옷장 하의 상품을 최신순으로 조회합니다."
     )
     @GetMapping("/bottom")
     public ApiResponse<ClosetResDTO.ProductListResponse> getClosetBottomProducts(
@@ -54,5 +54,41 @@ public class ClosetController {
     ) {
         ClosetResDTO.ProductListResponse response = closetQueryService.getClosetBottomProducts(userId);
         return ApiResponse.onSuccess(ClosetSuccessCode.CLOSET_BOTTOM_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "내 옷장 아우터 상품 조회",
+            description = "내 옷장 아우터 상품을 최신순으로 조회합니다."
+    )
+    @GetMapping("/outer")
+    public ApiResponse<ClosetResDTO.ProductListResponse> getClosetOuterProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ClosetResDTO.ProductListResponse response = closetQueryService.getClosetOuterProducts(userId);
+        return ApiResponse.onSuccess(ClosetSuccessCode.CLOSET_OUTER_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "내 옷장 원피스 상품 조회",
+            description = "내 옷장 원피스 상품을 최신순으로 조회합니다."
+    )
+    @GetMapping("/dress")
+    public ApiResponse<ClosetResDTO.ProductListResponse> getClosetDressProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ClosetResDTO.ProductListResponse response = closetQueryService.getClosetDressProducts(userId);
+        return ApiResponse.onSuccess(ClosetSuccessCode.CLOSET_DRESS_PRODUCTS_RETRIEVED, response);
+    }
+
+    @Operation(
+            summary = "내 옷장 기타 상품 조회",
+            description = "is_liked가 true인 기타(category=기타) 상품 전체를 최신 업데이트 순(update_at 내림차순)으로 조회합니다. 등록한 상품이 없으면 products는 null입니다."
+    )
+    @GetMapping("/etc")
+    public ApiResponse<ClosetResDTO.ProductListResponse> getClosetEtcProducts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        ClosetResDTO.ProductListResponse response = closetQueryService.getClosetEtcProducts(userId);
+        return ApiResponse.onSuccess(ClosetSuccessCode.CLOSET_ETC_PRODUCTS_RETRIEVED, response);
     }
 }

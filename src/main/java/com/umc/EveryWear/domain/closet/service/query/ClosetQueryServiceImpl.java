@@ -62,4 +62,49 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
                 .products(products)
                 .build();
     }
+
+    @Override
+    public ClosetResDTO.ProductListResponse getClosetOuterProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "아우터");
+
+        List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
+                ? null
+                : userProducts.stream()
+                .map(ClosetConverter::toProductDTO)
+                .collect(Collectors.toList());
+
+        return ClosetResDTO.ProductListResponse.builder()
+                .products(products)
+                .build();
+    }
+
+    @Override
+    public ClosetResDTO.ProductListResponse getClosetDressProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "원피스");
+
+        List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
+                ? null
+                : userProducts.stream()
+                .map(ClosetConverter::toProductDTO)
+                .collect(Collectors.toList());
+
+        return ClosetResDTO.ProductListResponse.builder()
+                .products(products)
+                .build();
+    }
+
+    @Override
+    public ClosetResDTO.ProductListResponse getClosetEtcProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "기타");
+
+        List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
+                ? null
+                : userProducts.stream()
+                .map(ClosetConverter::toProductDTO)
+                .collect(Collectors.toList());
+
+        return ClosetResDTO.ProductListResponse.builder()
+                .products(products)
+                .build();
+    }
 }
