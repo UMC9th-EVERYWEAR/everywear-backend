@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.exception.code;
 
+import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import com.umc.EveryWear.global.apiPayload.code.BaseSuccessCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -70,6 +71,37 @@ public enum ProductSuccessCode implements BaseSuccessCode {
             "200",
             "상품 좋아요가 성공적으로 비활성화되었습니다."),
     ;
+
+    // 좋아요 토글 API 응답용
+    public static ProductSuccessCode forLikeToggle(boolean isLiked) {
+        return Boolean.TRUE.equals(isLiked) ? PRODUCT_LIKE_ENABLED : PRODUCT_LIKE_DISABLED;
+    }
+
+    // 상품 등록 API 응답용: 쇼핑몰·업데이트 여부에 따른 성공 코드
+    public static ProductSuccessCode forImportResult(ShoppingMall mall, boolean isUrlUpdated, boolean isUpdated) {
+        if (isUrlUpdated) {
+            return switch (mall) {
+                case MUSINSA -> MUSINSA_PRODUCT_URL_UPDATED;
+                case ZIGZAG -> ZIGZAG_PRODUCT_URL_UPDATED;
+                case CM29 -> CM29_PRODUCT_URL_UPDATED;
+                case WCONCEPT -> WCONCEPT_PRODUCT_URL_UPDATED;
+            };
+        }
+        if (isUpdated) {
+            return switch (mall) {
+                case MUSINSA -> MUSINSA_PRODUCT_UPDATED;
+                case ZIGZAG -> ZIGZAG_PRODUCT_UPDATED;
+                case CM29 -> CM29_PRODUCT_UPDATED;
+                case WCONCEPT -> WCONCEPT_PRODUCT_UPDATED;
+            };
+        }
+        return switch (mall) {
+            case MUSINSA -> MUSINSA_PRODUCT_ADDED;
+            case ZIGZAG -> ZIGZAG_PRODUCT_ADDED;
+            case CM29 -> CM29_PRODUCT_ADDED;
+            case WCONCEPT -> WCONCEPT_PRODUCT_ADDED;
+        };
+    }
 
     private final HttpStatus status;
     private final String code;

@@ -72,7 +72,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         return ProductResDTO.ImportResult.builder().dto(result).mall(mall).build();
     }
 
-    // 쇼핑몰 공통 import 로직 (URL 검증은 호출 전 수행)
+    // 쇼핑몰 공통 import: URL 검증-기존 상품 처리-크롤링-신규 저장을 단계별 메서드로 위임
     private ProductResDTO.ImportDTO doImportByMall(Long userId, String productUrl, ShoppingMall mall) {
         try {
             User user = userRepository.findById(userId)
@@ -83,13 +83,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
             Product existingByUrl = productRepository.findByProductUrl(productUrl).orElse(null);
             if (existingByUrl != null) {
-                UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingByUrl.getProductId()).orElse(null);
-                if (up == null) {
-                    UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(existingByUrl).build());
-                    return ProductConverter.toImportDTO(saved, true);
-                }
-                userProductRepository.updateUpdatedAt(userId, existingByUrl.getProductId(), LocalDateTime.now());
-                return ProductConverter.toImportDTO(up, true);
+                return resolveOrLinkUserProduct(userId, user, existingByUrl, false);
             }
 
             ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
@@ -100,36 +94,46 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             if (existingByNum != null) {
                 existingByNum.updateProductUrl(productUrl);
                 Product updated = productRepository.save(existingByNum);
-                UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, updated.getProductId()).orElse(null);
-                if (up == null) {
-                    UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(updated).build());
-                    return ProductConverter.toImportDTO(saved, true, true);
-                }
-                userProductRepository.updateUpdatedAt(userId, updated.getProductId(), LocalDateTime.now());
-                return ProductConverter.toImportDTO(up, true, true);
+                return resolveOrLinkUserProduct(userId, user, updated, true);
             }
 
-            Product product = Product.builder()
-                    .shoppingmallName(crawlerData.getShoppingmallName())
-                    .productUrl(crawlerData.getProductUrl())
-                    .category(crawlerData.getCategory())
-                    .productImgUrl(crawlerData.getProductImgUrl())
-                    .productName(crawlerData.getProductName())
-                    .brandName(crawlerData.getBrandName())
-                    .price(crawlerData.getPrice())
-                    .starPoint(crawlerData.getStarPoint())
-                    .aiReview(crawlerData.getAiReview())
-                    .productNum(crawlerData.getProductNum())
-                    .build();
-            Product savedProduct = productRepository.save(product);
-            UserProduct savedUp = userProductRepository.save(UserProduct.builder().user(user).product(savedProduct).build());
-            return ProductConverter.toImportDTO(savedUp);
+            return createProductAndLink(user, crawlerData);
         } catch (ProductException e) {
             throw e;
         } catch (Exception e) {
             log.error("{} 상품 크롤링 중 오류: {}", mall.getDisplayName(), e.getMessage(), e);
             throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
         }
+    }
+
+    // 기존 Product에 대한 UserProduct 연결 또는 updatedAt 갱신 후 ImportDTO 반환
+    private ProductResDTO.ImportDTO resolveOrLinkUserProduct(Long userId, User user, Product product, boolean isUrlUpdated) {
+        UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, product.getProductId()).orElse(null);
+        if (up == null) {
+            UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(product).build());
+            return ProductConverter.toImportDTO(saved, true, isUrlUpdated);
+        }
+        userProductRepository.updateUpdatedAt(userId, product.getProductId(), LocalDateTime.now());
+        return ProductConverter.toImportDTO(up, true, isUrlUpdated);
+    }
+
+    // 크롤링 데이터로 Product와 UserProduct 생성 후 ImportDTO 반환
+    private ProductResDTO.ImportDTO createProductAndLink(User user, ProductCrawlingData data) {
+        Product product = Product.builder()
+                .shoppingmallName(data.getShoppingmallName())
+                .productUrl(data.getProductUrl())
+                .category(data.getCategory())
+                .productImgUrl(data.getProductImgUrl())
+                .productName(data.getProductName())
+                .brandName(data.getBrandName())
+                .price(data.getPrice())
+                .starPoint(data.getStarPoint())
+                .aiReview(data.getAiReview())
+                .productNum(data.getProductNum())
+                .build();
+        Product savedProduct = productRepository.save(product);
+        UserProduct savedUp = userProductRepository.save(UserProduct.builder().user(user).product(savedProduct).build());
+        return ProductConverter.toImportDTO(savedUp);
     }
 
     @Override

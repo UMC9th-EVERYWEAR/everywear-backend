@@ -19,14 +19,14 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     private final UserProductRepository userProductRepository;
 
     @Override
-    public ProductResDTO.ProductListResponse getAllProductsByUserId(Long userId) {
-        List<UserProduct> userProducts = userProductRepository.findAllProductsByUserIdOrderByUpdatedAtDesc(userId);
+    public ProductResDTO.ProductListResponse getAllProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdOrderByUpdatedAtDesc(userId);
         return toProductListResponse(userProducts);
     }
 
     @Override
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
-        List<UserProduct> userProducts = userProductRepository.findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
         return toProductListResponse(userProducts);
     }
 
