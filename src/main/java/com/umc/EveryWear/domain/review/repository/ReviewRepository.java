@@ -16,6 +16,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     /**
      * 특정 상품의 리뷰 내용만 조회 (AI 요약용)
      */
-    @Query("SELECT r.reviewContact FROM Review r WHERE r.product.productId = :productId")
+    @Query("SELECT r.content FROM Review r WHERE r.product.productId = :productId")
     List<String> findReviewContentsByProductId(@Param("productId") Long productId);
 }
