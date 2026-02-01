@@ -10,7 +10,6 @@ import com.umc.EveryWear.domain.review.entity.Review;
 import com.umc.EveryWear.domain.review.exception.ReviewException;
 import com.umc.EveryWear.domain.review.exception.code.ReviewErrorCode;
 import com.umc.EveryWear.domain.product.repository.ReviewKeywordRepository;
-import com.umc.EveryWear.domain.review.dto.AiReviewResult;
 import com.umc.EveryWear.domain.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,7 +106,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
      * @return 생성된 AI 요약 리뷰 및 키워드
      */
     @Override
-    public AiReviewResult generateAiReview(Long productId) {
+    public ReviewResDTO.AiReviewDTO generateAiReview(Long productId) {
         // 1. 상품 조회
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + productId));
@@ -117,7 +116,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
 
         if (reviewContents.isEmpty()) {
             log.info("상품 ID {}에 대한 리뷰가 없습니다.", productId);
-            return AiReviewResult.builder()
+            return ReviewResDTO.AiReviewDTO.builder()
                     .summary(null)
                     .keywords(List.of())
                     .build();
@@ -126,7 +125,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         log.info("상품 ID {}의 리뷰 {}개를 AI로 요약 및 키워드 추출 중...", productId, reviewContents.size());
 
         // 3. OpenAI API를 통해 리뷰 요약 및 키워드 추출
-        AiReviewResult aiResult = openAiService.summarizeReviewsWithKeywords(reviewContents);
+        ReviewResDTO.AiReviewDTO aiResult = openAiService.summarizeReviewsWithKeywords(reviewContents);
 
         // 4. Product의 aiReview 필드 업데이트
         productRepository.updateAiReview(product.getProductId(), aiResult.getSummary());
