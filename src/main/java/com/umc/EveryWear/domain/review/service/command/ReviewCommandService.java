@@ -2,7 +2,6 @@ package com.umc.EveryWear.domain.review.service.command;
 
 import com.umc.EveryWear.domain.review.dto.req.ReviewReqDTO;
 import com.umc.EveryWear.domain.review.dto.res.ReviewResDTO;
-import com.umc.EveryWear.domain.review.dto.AiReviewResult;
 
 public interface ReviewCommandService {
     ReviewResDTO.CrawlResponseDTO startReviewCrawling(ReviewReqDTO.CrawlReviewDTO dto);
@@ -12,5 +11,5 @@ public interface ReviewCommandService {
      * @param productId 상품 ID
      * @return 생성된 AI 요약 리뷰 및 키워드
      */
-    AiReviewResult generateAiReview(Long productId);
+    ReviewResDTO.AiReviewDTO generateAiReview(Long productId);
 }

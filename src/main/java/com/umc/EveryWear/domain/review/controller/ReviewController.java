@@ -1,6 +1,5 @@
 package com.umc.EveryWear.domain.review.controller;
 
-import com.umc.EveryWear.domain.review.dto.AiReviewResult;
 import com.umc.EveryWear.domain.review.dto.req.ReviewReqDTO;
 import com.umc.EveryWear.domain.review.dto.res.ReviewResDTO;
 import com.umc.EveryWear.domain.review.exception.code.ReviewSuccessCode;
@@ -258,7 +257,7 @@ public class ReviewController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long productId
     ) {
-        AiReviewResult aiResult = reviewCommandService.generateAiReview(productId);
+        ReviewResDTO.AiReviewDTO aiResult = reviewCommandService.generateAiReview(productId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("productId", productId);
