@@ -34,14 +34,14 @@ public class FittingController {
             @AuthenticationPrincipal Long userId,
             @RequestBody FittingRequestDto.FittingRequest request
     ) {
-        Long fittingId = fittingCommandService.requestFitting(
+        FittingResponseDto.FittingApplyResult result = fittingCommandService.requestFitting(
                 userId,
                 request.productId()
         );
 
         return ApiResponse.onSuccess(
                 FittingSuccessCode.FITTING_IMAGE_GENERATED,
-                new FittingResponseDto.FittingApplyResult(fittingId)
+                result
         );
     }
 

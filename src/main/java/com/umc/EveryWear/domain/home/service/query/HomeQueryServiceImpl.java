@@ -49,11 +49,17 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     }
 
     private FittingResponseDto.FittingSummary toSummary(FittingHistory h) {
+        UserProduct up = h.getUserProduct();
+
         return new FittingResponseDto.FittingSummary(
                 h.getFittingId(),
                 h.getFittingResultImage(),
-                h.getUserProduct().getIsLiked(),
-                h.getCreatedAt()
+                h.getCreatedAt(),
+                new FittingResponseDto.ProductBrief(
+                        up.getProduct().getProductId(),
+                        up.getProduct().getProductName(),
+                        up.getIsLiked()
+                )
         );
     }
 }
