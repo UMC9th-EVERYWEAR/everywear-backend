@@ -1,4 +1,4 @@
-package com.umc.EveryWear.domain.product.entity;
+package com.umc.EveryWear.domain.product.enums;
 
 public enum ReviewCrawlStatus {
     PROCESSING,
