@@ -66,6 +66,15 @@ dependencies {
 
 	// WebClient (HTTP Client for FastAPI)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// google genai sdk
+	implementation 'com.google.genai:google-genai:1.0.0'
+
+	// AWS SDK v2 BOM (버전 통합 관리)
+	implementation platform("software.amazon.awssdk:bom:2.25.65")
+
+	// S3 Client
+	implementation "software.amazon.awssdk:s3"
 }
 
 

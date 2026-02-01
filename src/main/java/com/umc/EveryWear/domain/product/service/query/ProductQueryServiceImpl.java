@@ -2,7 +2,7 @@ package com.umc.EveryWear.domain.product.service.query;
 
 import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
-import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,28 +19,23 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     private final UserProductRepository userProductRepository;
 
     @Override
-    public ProductResDTO.ProductListResponse getAllProductsByUserId(Long userId) {
-        List<Product> products = userProductRepository.findAllProductsByUserIdOrderByUpdatedAtDesc(userId);
-        
-        List<ProductResDTO.ListDTO> productList = products.stream()
-                .map(ProductConverter::toListDTO)
-                .collect(Collectors.toList());
-
-        return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
-                .build();
+    public ProductResDTO.ProductListResponse getAllProducts(Long userId) {
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdOrderByUpdatedAtDesc(userId);
+        return toProductListResponse(userProducts);
     }
 
     @Override
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
-        List<Product> products = userProductRepository.findProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
-        
-        List<ProductResDTO.ListDTO> productList = products.stream()
+        List<UserProduct> userProducts = userProductRepository.findAllByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
+        return toProductListResponse(userProducts);
+    }
+
+    private static ProductResDTO.ProductListResponse toProductListResponse(List<UserProduct> userProducts) {
+        List<ProductResDTO.ListDTO> products = userProducts.stream()
                 .map(ProductConverter::toListDTO)
                 .collect(Collectors.toList());
-
         return ProductResDTO.ProductListResponse.builder()
-                .products(productList)
+                .products(products)
                 .build();
     }
 }

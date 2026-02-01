@@ -1,7 +1,10 @@
 package com.umc.EveryWear.domain.user.exception;
 
-public class UserProductException extends RuntimeException {
-    public UserProductException(String message) {
-        super(message);
+import com.umc.EveryWear.global.apiPayload.code.BaseErrorCode;
+import com.umc.EveryWear.global.exception.GeneralException;
+
+public class UserProductException extends GeneralException {
+    public UserProductException(BaseErrorCode code) {
+        super(code);
     }
 }

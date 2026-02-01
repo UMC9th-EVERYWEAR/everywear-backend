@@ -6,6 +6,7 @@ import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
@@ -42,786 +43,217 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
     
-    @Value("${fastapi.base-url:http://localhost:8001}")
+    @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
 
+    private static final int CRAWL_TIMEOUT_SECONDS = 120;
+
+    private ShoppingMall detectShoppingMall(String url) {
+        if (url == null) return null;
+        for (ShoppingMall mall : ShoppingMall.values()) {
+            if (mall.matchesUrl(url)) return mall;
+        }
+        return null;
+    }
+
     @Override
-    public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
+    public ProductResDTO.ImportResult importProduct(Long userId, ProductReqDTO.ImportDTO dto) {
+        String productUrl = dto.getProduct_url();
+        ShoppingMall mall = detectShoppingMall(productUrl);
+        if (mall == null) {
+            throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
+        }
+        ProductResDTO.ImportDTO result = switch (mall) {
+            case MUSINSA -> importMusinsaProduct(userId, ProductReqDTO.ImportMusinsaDTO.builder().product_url(productUrl).build());
+            case ZIGZAG -> importZigzagProduct(userId, ProductReqDTO.ImportZigzagDTO.builder().product_url(productUrl).build());
+            case CM29 -> import29cmProduct(userId, ProductReqDTO.Import29cmDTO.builder().product_url(productUrl).build());
+            case WCONCEPT -> importWconceptProduct(userId, ProductReqDTO.ImportWconceptDTO.builder().product_url(productUrl).build());
+        };
+        return ProductResDTO.ImportResult.builder().dto(result).mall(mall).build();
+    }
+
+    // 쇼핑몰 공통 import: URL 검증-기존 상품 처리-크롤링-신규 저장을 단계별 메서드로 위임
+    private ProductResDTO.ImportDTO doImportByMall(Long userId, String productUrl, ShoppingMall mall) {
         try {
-            // User 조회 (UserProduct에 저장하기 위해)
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
-            
-            // 2차 URL 형식 검증(이중 보호 처리)
-            String productUrl = dto.getProduct_url();
-            boolean isValidUrl = productUrl != null && (
-                    productUrl.matches("^https://www\\.musinsa\\.com/products/\\d+$") ||
-                    productUrl.matches("^https://musinsa\\.onelink\\.me/[^/]+/[^/]+.*$")
-            );
-            if (!isValidUrl) {
+            if (!mall.matchesUrl(productUrl)) {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
-            
-            // URL로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
-                    .orElse(null);
-            
-            if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(existingProductByUrl)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
+
+            Product existingByUrl = productRepository.findByProductUrl(productUrl).orElse(null);
+            if (existingByUrl != null) {
+                return resolveOrLinkUserProduct(userId, user, existingByUrl, false);
             }
 
-            // 크롤링 실행
-            ProductCrawlingData crawlerData = crawlMusinsaProduct(dto.getProduct_url());
+            ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
+            Product existingByNum = crawlerData.getProductNum() != null
+                    ? productRepository.findByProductNum(crawlerData.getProductNum()).orElse(null)
+                    : null;
 
-            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByNum = null;
-            if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
-                        .orElse(null);
-            }
-            
-            if (existingProductByNum != null) {
-                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
-                existingProductByNum.updateProductUrl(productUrl);
-                Product updatedProduct = productRepository.save(existingProductByNum);
-                
-                // UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(updatedProduct)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
+            if (existingByNum != null) {
+                existingByNum.updateProductUrl(productUrl);
+                Product updated = productRepository.save(existingByNum);
+                return resolveOrLinkUserProduct(userId, user, updated, true);
             }
 
-            // Product 엔터티 생성 및 저장 (전역)
-            Product product = Product.builder()
-                    .shoppingmallName(crawlerData.getShoppingmallName())
-                    .productUrl(crawlerData.getProductUrl())
-                    .category(crawlerData.getCategory())
-                    .productImgUrl(crawlerData.getProductImgUrl())
-                    .productName(crawlerData.getProductName())
-                    .brandName(crawlerData.getBrandName())
-                    .price(crawlerData.getPrice())
-                    .starPoint(crawlerData.getStarPoint())
-                    .aiReview(crawlerData.getAiReview())
-                    .productNum(crawlerData.getProductNum())
-                    .build();
-
-            Product savedProduct = productRepository.save(product);
-            
-            // UserProduct에 저장
-            UserProduct userProduct = UserProduct.builder()
-                    .user(user)
-                    .product(savedProduct)
-                    .build();
-            userProductRepository.save(userProduct);
-
-            return ProductConverter.toImportDTO(savedProduct);
-
+            return createProductAndLink(user, crawlerData);
+        } catch (ProductException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("무신사 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
+            log.error("{} 상품 크롤링 중 오류: {}", mall.getDisplayName(), e.getMessage(), e);
             throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
         }
     }
+
+    // 기존 Product에 대한 UserProduct 연결 또는 updatedAt 갱신 후 ImportDTO 반환
+    private ProductResDTO.ImportDTO resolveOrLinkUserProduct(Long userId, User user, Product product, boolean isUrlUpdated) {
+        UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, product.getProductId()).orElse(null);
+        if (up == null) {
+            UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(product).build());
+            return ProductConverter.toImportDTO(saved, true, isUrlUpdated);
+        }
+        userProductRepository.updateUpdatedAt(userId, product.getProductId(), LocalDateTime.now());
+        return ProductConverter.toImportDTO(up, true, isUrlUpdated);
+    }
+
+    // 크롤링 데이터로 Product와 UserProduct 생성 후 ImportDTO 반환
+    private ProductResDTO.ImportDTO createProductAndLink(User user, ProductCrawlingData data) {
+        Product product = Product.builder()
+                .shoppingmallName(data.getShoppingmallName())
+                .productUrl(data.getProductUrl())
+                .category(data.getCategory())
+                .productImgUrl(data.getProductImgUrl())
+                .productName(data.getProductName())
+                .brandName(data.getBrandName())
+                .price(data.getPrice())
+                .starPoint(data.getStarPoint())
+                .aiReview(data.getAiReview())
+                .productNum(data.getProductNum())
+                .build();
+        Product savedProduct = productRepository.save(product);
+        UserProduct savedUp = userProductRepository.save(UserProduct.builder().user(user).product(savedProduct).build());
+        return ProductConverter.toImportDTO(savedUp);
+    }
+
+    @Override
+    public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
+        return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.MUSINSA);
+    }
+
+    @Override
+    public ProductResDTO.LikeToggleDTO toggleProductLike(Long userId, Long productId) {
+        // 상품 존재 여부 검증
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        // User 조회 (매핑이 새로 생길 수도 있으므로)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+
+        // 해당 사용자의 UserProduct 조회
+        UserProduct userProduct = userProductRepository
+                .findByUser_UserIdAndProduct_ProductId(userId, productId)
+                .orElseGet(() -> {
+                    // 매핑이 없으면 새로 생성 (기본 isLiked=false)
+                    UserProduct up = UserProduct.builder()
+                            .user(user)
+                            .product(product)
+                            .build();
+                    return userProductRepository.save(up);
+                });
+
+        // 좋아요 상태 토글
+        userProduct.toggleLike();
+
+        // JPA 변경 감지로 업데이트, 혹시 모르니 save 호출
+        UserProduct saved = userProductRepository.save(userProduct);
+
+        return ProductResDTO.LikeToggleDTO.builder()
+                .is_liked(saved.getIsLiked())
+                .build();
+    }
   
-    // 무신사 상품 정보 크롤링 - FastAPI 서버 호출
-    private ProductCrawlingData crawlMusinsaProduct(String url) {
+    // 쇼핑몰별 크롤링 공통 호출
+    private ProductCrawlingData crawlProduct(String url, ShoppingMall mall) {
         try {
-            // FastAPI 서버에 요청
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("product_url", url);
-            
             String responseJson = webClient.post()
-                    .uri(fastApiBaseUrl + "/crawl/musinsa")
+                    .uri(fastApiBaseUrl + "/crawl/" + mall.getCrawlPath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(requestBody))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(120)) // 크롤링은 시간이 걸릴 수 있으므로 120초 타임아웃
+                    .timeout(Duration.ofSeconds(CRAWL_TIMEOUT_SECONDS))
                     .block();
-            
             log.debug("FastAPI 응답: {}", responseJson);
-            
-            // JSON 파싱
             JsonNode jsonNode = objectMapper.readTree(responseJson);
-            
-            // ProductCrawlingData로 변환
-            ProductCrawlingData data = new ProductCrawlingData();
-            data.setShoppingmallName(jsonNode.has("shoppingmall_name") ? 
-                    jsonNode.get("shoppingmall_name").asText() : "무신사");
-            data.setProductUrl(jsonNode.has("product_url") ? 
-                    jsonNode.get("product_url").asText() : url);
-            data.setCategory(jsonNode.has("category") ? 
-                    jsonNode.get("category").asText() : "-");
-            data.setProductImgUrl(jsonNode.has("product_img_url") ? 
-                    jsonNode.get("product_img_url").asText() : "-");
-            data.setProductName(jsonNode.has("product_name") ? 
-                    jsonNode.get("product_name").asText() : "-");
-            data.setBrandName(jsonNode.has("brand_name") ? 
-                    jsonNode.get("brand_name").asText() : "-");
-            data.setPrice(jsonNode.has("price") ? 
-                    jsonNode.get("price").asText() : "-");
-            
-            // 별점 처리 (null 허용)
-            if (jsonNode.has("star_point") && !jsonNode.get("star_point").isNull()) {
-                JsonNode starPointNode = jsonNode.get("star_point");
-                if (starPointNode.isNumber()) {
-                    data.setStarPoint((float) starPointNode.asDouble());
-                } else if (starPointNode.isTextual()) {
-                    try {
-                        data.setStarPoint(Float.parseFloat(starPointNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setStarPoint(null);
-                    }
-                } else {
-                    data.setStarPoint(null);
-                }
-            } else {
-                data.setStarPoint(null);
-            }
-            
-            data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
-                    jsonNode.get("AI_review").asText() : null);
-            
-            // product_num 처리
-            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
-                JsonNode productNumNode = jsonNode.get("product_num");
-                if (productNumNode.isNumber()) {
-                    data.setProductNum(productNumNode.asLong());
-                } else if (productNumNode.isTextual()) {
-                    try {
-                        data.setProductNum(Long.parseLong(productNumNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setProductNum(null);
-                    }
-                } else {
-                    data.setProductNum(null);
-                }
-            } else {
-                data.setProductNum(null);
-            }
-            
-            return data;
-            
+            return parseCrawlingResponse(jsonNode, url, mall.getDisplayName());
         } catch (WebClientResponseException e) {
-            log.error("FastAPI 서버 호출 실패 (status: {}, body: {}): {}", 
+            log.error("FastAPI 서버 호출 실패 (status: {}, body: {}): {}",
                     e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage(), e);
             throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
         } catch (Exception e) {
             log.error("FastAPI 서버 호출 중 오류 발생: {}", e.getMessage(), e);
             throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
         }
+    }
+
+    private ProductCrawlingData parseCrawlingResponse(JsonNode jsonNode, String requestUrl, String defaultMallName) {
+        ProductCrawlingData data = new ProductCrawlingData();
+        data.setShoppingmallName(jsonNode.has("shoppingmall_name") ? jsonNode.get("shoppingmall_name").asText() : defaultMallName);
+        data.setProductUrl(jsonNode.has("product_url") ? jsonNode.get("product_url").asText() : requestUrl);
+        data.setCategory(getTextOr(jsonNode, "category", "-"));
+        data.setProductImgUrl(getTextOr(jsonNode, "product_img_url", "-"));
+        data.setProductName(getTextOr(jsonNode, "product_name", "-"));
+        data.setBrandName(getTextOr(jsonNode, "brand_name", "-"));
+        data.setPrice(getTextOr(jsonNode, "price", "-"));
+        data.setStarPoint(parseStarPoint(jsonNode));
+        data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? jsonNode.get("AI_review").asText() : null);
+        data.setProductNum(parseProductNum(jsonNode));
+        return data;
+    }
+
+    private static String getTextOr(JsonNode node, String key, String defaultValue) {
+        return node.has(key) ? node.get(key).asText() : defaultValue;
+    }
+
+    private static Float parseStarPoint(JsonNode jsonNode) {
+        if (!jsonNode.has("star_point") || jsonNode.get("star_point").isNull()) return null;
+        JsonNode n = jsonNode.get("star_point");
+        if (n.isNumber()) return (float) n.asDouble();
+        if (n.isTextual()) {
+            String s = n.asText();
+            if ("-".equals(s)) return null;
+            try { return Float.parseFloat(s); } catch (NumberFormatException e) { return null; }
+        }
+        return null;
+    }
+
+    private static Long parseProductNum(JsonNode jsonNode) {
+        if (!jsonNode.has("product_num") || jsonNode.get("product_num").isNull()) return null;
+        JsonNode n = jsonNode.get("product_num");
+        if (n.isNumber()) return n.asLong();
+        if (n.isTextual()) {
+            try { return Long.parseLong(n.asText()); } catch (NumberFormatException e) { return null; }
+        }
+        return null;
     }
 
     @Override
     public ProductResDTO.ImportDTO importZigzagProduct(Long userId, ProductReqDTO.ImportZigzagDTO dto) {
-        try {
-            // User 조회 (UserProduct에 저장하기 위해)
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
-            
-            // 2차 URL 형식 검증(이중 보호 처리)
-            String productUrl = dto.getProduct_url();
-            boolean isValidUrl = productUrl != null && (
-                    productUrl.matches("^https://zigzag\\.kr/catalog/products/\\d+$") ||
-                    productUrl.matches("^https://s\\.zigzag\\.kr/[A-Za-z0-9]+$")
-            );
-            if (!isValidUrl) {
-                throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
-            }
-            
-            // URL로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
-                    .orElse(null);
-            
-            if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(existingProductByUrl)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
-            }
-
-            // 크롤링 실행
-            ProductCrawlingData crawlerData = crawlZigzagProduct(dto.getProduct_url());
-
-            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByNum = null;
-            if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
-                        .orElse(null);
-            }
-            
-            if (existingProductByNum != null) {
-                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
-                existingProductByNum.updateProductUrl(productUrl);
-                Product updatedProduct = productRepository.save(existingProductByNum);
-                
-                // UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(updatedProduct)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
-            }
-
-            // Product 엔터티 생성 및 저장 (전역)
-            Product product = Product.builder()
-                    .shoppingmallName(crawlerData.getShoppingmallName())
-                    .productUrl(crawlerData.getProductUrl())
-                    .category(crawlerData.getCategory())
-                    .productImgUrl(crawlerData.getProductImgUrl())
-                    .productName(crawlerData.getProductName())
-                    .brandName(crawlerData.getBrandName())
-                    .price(crawlerData.getPrice())
-                    .starPoint(crawlerData.getStarPoint())
-                    .aiReview(crawlerData.getAiReview())
-                    .productNum(crawlerData.getProductNum())
-                    .build();
-
-            Product savedProduct = productRepository.save(product);
-            
-            // UserProduct에 저장
-            UserProduct userProduct = UserProduct.builder()
-                    .user(user)
-                    .product(savedProduct)
-                    .build();
-            userProductRepository.save(userProduct);
-
-            return ProductConverter.toImportDTO(savedProduct);
-
-        } catch (Exception e) {
-            log.error("지그재그 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
+        return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.ZIGZAG);
     }
 
-    // 지그재그 상품 정보 크롤링 - FastAPI 서버 호출
-    private ProductCrawlingData crawlZigzagProduct(String url) {
-        try {
-            // FastAPI 서버에 요청
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("product_url", url);
-            
-            String responseJson = webClient.post()
-                    .uri(fastApiBaseUrl + "/crawl/zigzag")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(BodyInserters.fromValue(requestBody))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(120)) // 크롤링은 시간이 걸릴 수 있으므로 120초 타임아웃
-                    .block();
-            
-            log.debug("FastAPI 응답: {}", responseJson);
-            
-            // JSON 파싱
-            JsonNode jsonNode = objectMapper.readTree(responseJson);
-            
-            // ProductCrawlingData로 변환
-            ProductCrawlingData data = new ProductCrawlingData();
-            data.setShoppingmallName(jsonNode.has("shoppingmall_name") ? 
-                    jsonNode.get("shoppingmall_name").asText() : "지그재그");
-            data.setProductUrl(jsonNode.has("product_url") ? 
-                    jsonNode.get("product_url").asText() : url);
-            data.setCategory(jsonNode.has("category") ? 
-                    jsonNode.get("category").asText() : "-");
-            data.setProductImgUrl(jsonNode.has("product_img_url") ? 
-                    jsonNode.get("product_img_url").asText() : "-");
-            data.setProductName(jsonNode.has("product_name") ? 
-                    jsonNode.get("product_name").asText() : "-");
-            data.setBrandName(jsonNode.has("brand_name") ? 
-                    jsonNode.get("brand_name").asText() : "-");
-            data.setPrice(jsonNode.has("price") ? 
-                    jsonNode.get("price").asText() : "-");
-            
-            // 별점 처리 (null 허용, 문자열 "-"도 null로 처리)
-            if (jsonNode.has("star_point") && !jsonNode.get("star_point").isNull()) {
-                JsonNode starPointNode = jsonNode.get("star_point");
-                if (starPointNode.isNumber()) {
-                    data.setStarPoint((float) starPointNode.asDouble());
-                } else if (starPointNode.isTextual()) {
-                    String starPointStr = starPointNode.asText();
-                    if ("-".equals(starPointStr)) {
-                        data.setStarPoint(null);
-                    } else {
-                        try {
-                            data.setStarPoint(Float.parseFloat(starPointStr));
-                        } catch (NumberFormatException e) {
-                            data.setStarPoint(null);
-                        }
-                    }
-                } else {
-                    data.setStarPoint(null);
-                }
-            } else {
-                data.setStarPoint(null);
-            }
-            
-            data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
-                    jsonNode.get("AI_review").asText() : null);
-            
-            // product_num 처리
-            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
-                JsonNode productNumNode = jsonNode.get("product_num");
-                if (productNumNode.isNumber()) {
-                    data.setProductNum(productNumNode.asLong());
-                } else if (productNumNode.isTextual()) {
-                    try {
-                        data.setProductNum(Long.parseLong(productNumNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setProductNum(null);
-                    }
-                } else {
-                    data.setProductNum(null);
-                }
-            } else {
-                data.setProductNum(null);
-            }
-            
-            return data;
-            
-        } catch (WebClientResponseException e) {
-            log.error("FastAPI 서버 호출 실패 (status: {}, body: {}): {}", 
-                    e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        } catch (Exception e) {
-            log.error("FastAPI 서버 호출 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
-    }
-  
-  
     @Override
     public ProductResDTO.ImportDTO import29cmProduct(Long userId, ProductReqDTO.Import29cmDTO dto) {
-        try {
-            // User 조회 (UserProduct에 저장하기 위해)
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
-            
-            // 2차 URL 형식 검증(이중 보호 처리)
-            String productUrl = dto.getProduct_url();
-            boolean isValidUrl = productUrl != null && (
-                    productUrl.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*$") ||
-                    productUrl.matches("^https://29cm\\.onelink\\.me/.*$")
-            );
-            if (!isValidUrl) {
-                throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
-            }
-            
-            // URL로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
-                    .orElse(null);
-            
-            if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(existingProductByUrl)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
-            }
-
-            // 크롤링 실행
-            ProductCrawlingData crawlerData = crawl29cmProduct(dto.getProduct_url());
-
-            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByNum = null;
-            if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
-                        .orElse(null);
-            }
-            
-            if (existingProductByNum != null) {
-                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
-                existingProductByNum.updateProductUrl(productUrl);
-                Product updatedProduct = productRepository.save(existingProductByNum);
-                
-                // UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(updatedProduct)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
-            }
-
-            // Product 엔터티 생성 및 저장 (전역)
-            Product product = Product.builder()
-                    .shoppingmallName(crawlerData.getShoppingmallName())
-                    .productUrl(crawlerData.getProductUrl())
-                    .category(crawlerData.getCategory())
-                    .productImgUrl(crawlerData.getProductImgUrl())
-                    .productName(crawlerData.getProductName())
-                    .brandName(crawlerData.getBrandName())
-                    .price(crawlerData.getPrice())
-                    .starPoint(crawlerData.getStarPoint())
-                    .aiReview(crawlerData.getAiReview())
-                    .productNum(crawlerData.getProductNum())
-                    .build();
-
-            Product savedProduct = productRepository.save(product);
-            
-            // UserProduct에 저장
-            UserProduct userProduct = UserProduct.builder()
-                    .user(user)
-                    .product(savedProduct)
-                    .build();
-            userProductRepository.save(userProduct);
-
-            return ProductConverter.toImportDTO(savedProduct);
-
-        } catch (Exception e) {
-            log.error("29cm 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
+        return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.CM29);
     }
-              
-    // 29cm 상품 정보 크롤링 - FastAPI 서버 호출
-    private ProductCrawlingData crawl29cmProduct(String url) {
-        try {
-            // FastAPI 서버에 요청
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("product_url", url);
-            
-            String responseJson = webClient.post()
-                    .uri(fastApiBaseUrl + "/crawl/29cm")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(BodyInserters.fromValue(requestBody))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(120)) // 크롤링은 시간이 걸릴 수 있으므로 120초 타임아웃
-                    .block();
-            
-            log.debug("FastAPI 응답: {}", responseJson);
-            
-            // JSON 파싱
-            JsonNode jsonNode = objectMapper.readTree(responseJson);
-            
-            // ProductCrawlingData로 변환
-            ProductCrawlingData data = new ProductCrawlingData();
-            data.setShoppingmallName(jsonNode.has("shoppingmall_name") ? 
-                    jsonNode.get("shoppingmall_name").asText() : "29CM");
-            data.setProductUrl(jsonNode.has("product_url") ? 
-                    jsonNode.get("product_url").asText() : url);
-            data.setCategory(jsonNode.has("category") ? 
-                    jsonNode.get("category").asText() : "-");
-            data.setProductImgUrl(jsonNode.has("product_img_url") ? 
-                    jsonNode.get("product_img_url").asText() : "-");
-            data.setProductName(jsonNode.has("product_name") ? 
-                    jsonNode.get("product_name").asText() : "-");
-            data.setBrandName(jsonNode.has("brand_name") ? 
-                    jsonNode.get("brand_name").asText() : "-");
-            data.setPrice(jsonNode.has("price") ? 
-                    jsonNode.get("price").asText() : "-");
-            
-            // 별점 처리 (null 허용)
-            if (jsonNode.has("star_point") && !jsonNode.get("star_point").isNull()) {
-                JsonNode starPointNode = jsonNode.get("star_point");
-                if (starPointNode.isNumber()) {
-                    data.setStarPoint((float) starPointNode.asDouble());
-                } else if (starPointNode.isTextual()) {
-                    try {
-                        data.setStarPoint(Float.parseFloat(starPointNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setStarPoint(null);
-                    }
-                } else {
-                    data.setStarPoint(null);
-                }
-            } else {
-                data.setStarPoint(null);
-            }
-            
-            data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
-                    jsonNode.get("AI_review").asText() : null);
-            
-            // product_num 처리
-            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
-                JsonNode productNumNode = jsonNode.get("product_num");
-                if (productNumNode.isNumber()) {
-                    data.setProductNum(productNumNode.asLong());
-                } else if (productNumNode.isTextual()) {
-                    try {
-                        data.setProductNum(Long.parseLong(productNumNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setProductNum(null);
-                    }
-                } else {
-                    data.setProductNum(null);
-                }
-            } else {
-                data.setProductNum(null);
-            }
-            
-            return data;
-            
-        } catch (WebClientResponseException e) {
-            log.error("FastAPI 서버 호출 실패 (status: {}, body: {}): {}", 
-                    e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        } catch (Exception e) {
-            log.error("FastAPI 서버 호출 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
-    }
-
 
     @Override
-    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.WconceptImportDTO dto) {
-        try {
-            // User 조회 (UserProduct에 저장하기 위해)
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
-            
-            // 2차 URL 형식 검증(이중 보호 처리)
-            String productUrl = dto.getProduct_url();
-            boolean isValidUrl = productUrl != null && (
-                    productUrl.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$") ||
-                    productUrl.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$")
-            );
-            if (!isValidUrl) {
-                throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
-            }
-            
-            // URL로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByUrl = productRepository.findByProductUrl(productUrl)
-                    .orElse(null);
-            
-            if (existingProductByUrl != null) {
-                // 기존 상품이 있으면 UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, existingProductByUrl.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성 (BaseEntity가 자동으로 createdAt, updatedAt 설정)
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(existingProductByUrl)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, existingProductByUrl.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(existingProductByUrl, true);
-            }
-
-            // 크롤링 실행
-            ProductCrawlingData crawlerData = crawlWconceptProduct(dto.getProduct_url());
-
-            // 크롤링 후 상품 고유값으로 이미 등록된 상품인지 확인 (전역)
-            Product existingProductByNum = null;
-            if (crawlerData.getProductNum() != null) {
-                existingProductByNum = productRepository.findByProductNum(crawlerData.getProductNum())
-                        .orElse(null);
-            }
-            
-            if (existingProductByNum != null) {
-                // 상품 고윳값으로 이미 등록된 상품이 있으면 상품URL을 현재 URL로 업데이트
-                existingProductByNum.updateProductUrl(productUrl);
-                Product updatedProduct = productRepository.save(existingProductByNum);
-                
-                // UserProduct에 이미 등록되어 있는지 확인
-                UserProduct existingUserProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, updatedProduct.getProductId())
-                        .orElse(null);
-                
-                if (existingUserProduct == null) {
-                    // UserProduct에 없으면 새로 생성
-                    UserProduct userProduct = UserProduct.builder()
-                            .user(user)
-                            .product(updatedProduct)
-                            .build();
-                    userProductRepository.save(userProduct);
-                } else {
-                    // 기존 UserProduct가 있으면 updated_at을 현재 시간으로 업데이트
-                    userProductRepository.updateUpdatedAt(userId, updatedProduct.getProductId(), LocalDateTime.now());
-                }
-                return ProductConverter.toImportDTO(updatedProduct, true, true);
-            }
-
-            // Product 엔터티 생성 및 저장 (전역)
-            Product product = Product.builder()
-                    .shoppingmallName(crawlerData.getShoppingmallName())
-                    .productUrl(crawlerData.getProductUrl())
-                    .category(crawlerData.getCategory())
-                    .productImgUrl(crawlerData.getProductImgUrl())
-                    .productName(crawlerData.getProductName())
-                    .brandName(crawlerData.getBrandName())
-                    .price(crawlerData.getPrice())
-                    .starPoint(crawlerData.getStarPoint())
-                    .aiReview(crawlerData.getAiReview())
-                    .productNum(crawlerData.getProductNum())
-                    .build();
-
-            Product savedProduct = productRepository.save(product);
-            
-            // UserProduct에 저장
-            UserProduct userProduct = UserProduct.builder()
-                    .user(user)
-                    .product(savedProduct)
-                    .build();
-            userProductRepository.save(userProduct);
-
-            return ProductConverter.toImportDTO(savedProduct);
-
-        } catch (Exception e) {
-            log.error("W컨셉 상품 크롤링 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
-    }
-
-    // W컨셉 상품 정보 크롤링 - FastAPI 서버 호출
-    private ProductCrawlingData crawlWconceptProduct(String url) {
-        try {
-            // FastAPI 서버에 요청
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("product_url", url);
-            
-            String responseJson = webClient.post()
-                    .uri(fastApiBaseUrl + "/crawl/wconcept")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(BodyInserters.fromValue(requestBody))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(120)) // 크롤링은 시간이 걸릴 수 있으므로 120초 타임아웃
-                    .block();
-            
-            log.debug("FastAPI 응답: {}", responseJson);
-            
-            // JSON 파싱
-            JsonNode jsonNode = objectMapper.readTree(responseJson);
-            
-            // ProductCrawlingData로 변환
-            ProductCrawlingData data = new ProductCrawlingData();
-            data.setShoppingmallName(jsonNode.has("shoppingmall_name") ? 
-                    jsonNode.get("shoppingmall_name").asText() : "W컨셉");
-            data.setProductUrl(jsonNode.has("product_url") ? 
-                    jsonNode.get("product_url").asText() : url);
-            data.setCategory(jsonNode.has("category") ? 
-                    jsonNode.get("category").asText() : "-");
-            data.setProductImgUrl(jsonNode.has("product_img_url") ? 
-                    jsonNode.get("product_img_url").asText() : "-");
-            data.setProductName(jsonNode.has("product_name") ? 
-                    jsonNode.get("product_name").asText() : "-");
-            data.setBrandName(jsonNode.has("brand_name") ? 
-                    jsonNode.get("brand_name").asText() : "-");
-            data.setPrice(jsonNode.has("price") ? 
-                    jsonNode.get("price").asText() : "-");
-            
-            // 별점 처리 (null 허용)
-            if (jsonNode.has("star_point") && !jsonNode.get("star_point").isNull()) {
-                JsonNode starPointNode = jsonNode.get("star_point");
-                if (starPointNode.isNumber()) {
-                    data.setStarPoint((float) starPointNode.asDouble());
-                } else if (starPointNode.isTextual()) {
-                    try {
-                        data.setStarPoint(Float.parseFloat(starPointNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setStarPoint(null);
-                    }
-                } else {
-                    data.setStarPoint(null);
-                }
-            } else {
-                data.setStarPoint(null);
-            }
-            
-            data.setAiReview(jsonNode.has("AI_review") && !jsonNode.get("AI_review").isNull() ? 
-                    jsonNode.get("AI_review").asText() : null);
-            
-            // product_num 처리
-            if (jsonNode.has("product_num") && !jsonNode.get("product_num").isNull()) {
-                JsonNode productNumNode = jsonNode.get("product_num");
-                if (productNumNode.isNumber()) {
-                    data.setProductNum(productNumNode.asLong());
-                } else if (productNumNode.isTextual()) {
-                    try {
-                        data.setProductNum(Long.parseLong(productNumNode.asText()));
-                    } catch (NumberFormatException e) {
-                        data.setProductNum(null);
-                    }
-                } else {
-                    data.setProductNum(null);
-                }
-            } else {
-                data.setProductNum(null);
-            }
-            
-            return data;
-            
-        } catch (WebClientResponseException e) {
-            log.error("FastAPI 서버 호출 실패 (status: {}, body: {}): {}", 
-                    e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        } catch (Exception e) {
-            log.error("FastAPI 서버 호출 중 오류 발생: {}", e.getMessage(), e);
-            throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
-        }
+    public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.ImportWconceptDTO dto) {
+        return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.WCONCEPT);
     }
 
     // 크롤링 데이터를 담는 내부 클래스
