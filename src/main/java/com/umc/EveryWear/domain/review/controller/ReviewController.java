@@ -267,4 +267,17 @@ public class ReviewController {
 
         return ApiResponse.onSuccess(GeneralSuccessCode.CREATED, result);
     }
+
+    @Operation(
+            summary = "AI 리뷰 조회",
+            description = "특정 상품에 대해 이미 생성된 AI 요약과 키워드를 조회합니다."
+    )
+    @GetMapping("/ai/{productId}")
+    public ApiResponse<ReviewResDTO.AiReviewDTO> getAiReview(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long productId
+    ) {
+        ReviewResDTO.AiReviewDTO response = reviewQueryService.getAiReview(productId);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
+    }
 }

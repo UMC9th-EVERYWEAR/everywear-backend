@@ -3,6 +3,8 @@ package com.umc.EveryWear.domain.review.service.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.umc.EveryWear.domain.review.dto.res.ReviewResDTO;
+import com.umc.EveryWear.domain.review.exception.ReviewException;
+import com.umc.EveryWear.domain.review.exception.code.ReviewErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,22 +49,14 @@ public class OpenAiService {
      */
     public ReviewResDTO.AiReviewDTO summarizeReviewsWithKeywords(List<String> reviews) {
         if (reviews == null || reviews.isEmpty()) {
-            return ReviewResDTO.AiReviewDTO.builder()
-                    .summary(null)
-                    .keywords(Collections.emptyList())
-                    .message("리뷰가 없습니다.")
-                    .build();
+            throw new ReviewException(ReviewErrorCode.REVIEW_COUNT_INSUFFICIENT);
         }
 
-        // 리뷰가 5개 미만이면 요약하지 않음
+        // 리뷰가 5개 미만(이하)이면 예외 발생시킴
         if (reviews.size() <= MIN_REVIEW_COUNT) {
-            log.info("리뷰 개수가 {}개로 최소 개수({})보다 적어 요약을 생성하지 않습니다.",
+            log.warn("리뷰 개수가 {}개로 최소 개수({})보다 적어 요약을 생성하지 않습니다.",
                     reviews.size(), MIN_REVIEW_COUNT);
-            return ReviewResDTO.AiReviewDTO.builder()
-                    .summary(null)
-                    .keywords(Collections.emptyList())
-                    .message("리뷰 수가 부족하여 AI 리뷰 요약이 불가능합니다.")
-                    .build();
+            throw new ReviewException(ReviewErrorCode.REVIEW_COUNT_INSUFFICIENT);
         }
 
         try {

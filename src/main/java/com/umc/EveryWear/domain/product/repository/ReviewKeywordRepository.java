@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.repository;
 
+import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.product.entity.ReviewKeyword;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -23,4 +24,7 @@ public interface ReviewKeywordRepository extends JpaRepository<ReviewKeyword, Lo
     @Modifying
     @Query("DELETE FROM ReviewKeyword rk WHERE rk.product.productId = :productId")
     void deleteByProductId(@Param("productId") Long productId);
+
+    List<ReviewKeyword> findByProduct(Product product);
+
 }

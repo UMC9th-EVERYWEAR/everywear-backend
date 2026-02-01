@@ -1,5 +1,7 @@
 package com.umc.EveryWear.domain.review.repository;
 
+import com.umc.EveryWear.domain.product.entity.Product;
+import com.umc.EveryWear.domain.product.entity.ReviewKeyword;
 import com.umc.EveryWear.domain.review.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
