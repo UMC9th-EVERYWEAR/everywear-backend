@@ -2,6 +2,8 @@ package com.umc.EveryWear.domain.closet.service.query;
 
 import com.umc.EveryWear.domain.closet.converter.ClosetConverter;
 import com.umc.EveryWear.domain.closet.dto.res.ClosetResDTO;
+import com.umc.EveryWear.domain.closet.exception.ClosetException;
+import com.umc.EveryWear.domain.closet.exception.code.ClosetErrorCode;
 import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdOrderByUpdatedAtDesc(userId);
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -35,6 +38,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetTopProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "상의");
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -50,6 +54,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetBottomProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "하의");
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -65,6 +70,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetOuterProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "아우터");
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -80,6 +86,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetDressProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "원피스");
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -95,6 +102,7 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
 
     @Override
     public ClosetResDTO.ProductListResponse getClosetEtcProducts(Long userId) {
+        validateUserId(userId);
         List<UserProduct> userProducts = userProductRepository.findLikedProductsByUserIdAndCategoryOrderByUpdatedAtDesc(userId, "기타");
 
         List<ClosetResDTO.ProductDTO> products = userProducts.isEmpty()
@@ -106,5 +114,11 @@ public class ClosetQueryServiceImpl implements ClosetQueryService {
         return ClosetResDTO.ProductListResponse.builder()
                 .products(products)
                 .build();
+    }
+
+    private void validateUserId(Long userId) {
+        if (userId == null) {
+            throw new ClosetException(ClosetErrorCode.CLOSET_UNAUTHORIZED);
+        }
     }
 }

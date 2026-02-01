@@ -1,7 +1,7 @@
 package com.umc.EveryWear.domain.review.service.command;
 
 import com.umc.EveryWear.domain.product.entity.Product;
-import com.umc.EveryWear.domain.product.entity.ReviewCrawlStatus;
+import com.umc.EveryWear.domain.product.enums.ReviewCrawlStatus;
 import com.umc.EveryWear.domain.product.entity.ReviewKeyword;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
 import com.umc.EveryWear.domain.review.dto.req.ReviewReqDTO;

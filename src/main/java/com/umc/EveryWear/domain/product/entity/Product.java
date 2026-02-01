@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.entity;
 
+import com.umc.EveryWear.domain.product.enums.ReviewCrawlStatus;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
