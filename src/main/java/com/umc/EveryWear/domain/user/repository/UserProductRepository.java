@@ -46,4 +46,6 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
     // 60일 경과된 UserProduct 조회
     @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate")
     List<UserProduct> findAllByUpdatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    boolean existsByUser_UserIdAndProduct_ProductIdAndIsLikedTrue(Long userId, Long productId);
 }
