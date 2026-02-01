@@ -32,12 +32,15 @@ public class UserImgQueryService {
     }
 
     /**
-     * 전체 프로필 이미지 조회
+     * 유저 프로필 이미지 목록 조회
      */
-    public List<UserImgResponseDto.UserImgQuery> getAll(User user) {
-        return userImgRepository.findAllByUser(user)
-                .stream()
-                .map(UserImgResponseDto.UserImgQuery::from)
+    public List<UserImgResponseDto.UserImgQuery> getProfileImages(Long userId) {
+        return userImgRepository.findAllByUser_UserId(userId).stream()
+                .map(img -> new UserImgResponseDto.UserImgQuery(
+                        img.getProfileImageId(),
+                        img.getImageUrl(),
+                        img.isRepresentative()
+                ))
                 .toList();
     }
 
