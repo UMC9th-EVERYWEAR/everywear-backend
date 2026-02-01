@@ -12,8 +12,9 @@ import lombok.*;
 public class ReviewKeyword {
 
     @Id
-    @Column(name = "keyword_id", length = 255)
-    private String keywordId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "keyword_id")
+    private Long keywordId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

@@ -7,6 +7,7 @@ import com.umc.EveryWear.domain.review.service.command.ReviewCommandService;
 import com.umc.EveryWear.domain.review.service.query.ReviewQueryService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import com.umc.EveryWear.global.apiPayload.code.BaseSuccessCode;
+import com.umc.EveryWear.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,6 +19,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Tag(name = "Review", description = "리뷰 관련 API")
 @RestController
@@ -242,5 +246,38 @@ public class ReviewController {
         };
 
         return ApiResponse.onSuccess(successCode, response);
+    }
+
+    @Operation(
+            summary = "특정 상품의 AI 리뷰 및 키워드 생성",
+            description = "특정 상품의 모든 리뷰를 ChatGPT로 요약하고 키워드 4개를 추출합니다."
+    )
+    @PostMapping("/ai/{productId}")
+    public ApiResponse<Map<String, Object>> generateAiReview(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long productId
+    ) {
+        ReviewResDTO.AiReviewDTO aiResult = reviewCommandService.generateAiReview(productId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("productId", productId);
+        result.put("aiReview", aiResult.getSummary());
+        result.put("keywords", aiResult.getKeywords());
+        result.put("message", "AI 리뷰 및 키워드가 성공적으로 생성되었습니다.");
+
+        return ApiResponse.onSuccess(GeneralSuccessCode.CREATED, result);
+    }
+
+    @Operation(
+            summary = "AI 리뷰 조회",
+            description = "특정 상품에 대해 이미 생성된 AI 요약과 키워드를 조회합니다."
+    )
+    @GetMapping("/ai/{productId}")
+    public ApiResponse<ReviewResDTO.AiReviewDTO> getAiReview(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long productId
+    ) {
+        ReviewResDTO.AiReviewDTO response = reviewQueryService.getAiReview(productId);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
     }
 }
