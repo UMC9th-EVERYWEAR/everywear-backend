@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -53,46 +54,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addCookie(refreshCookie);
 
 
-        // 테스트용: 토큰을 단순 HTML 페이지로 표시
-        response.setContentType("text/html; charset=UTF-8");
-        response.getWriter().write(
-                "<html><body style='font-family: Arial, sans-serif; padding: 20px;'>" +
-                        "<h2 style='color: #4CAF50;'>✅ 로그인 성공!</h2>" +
-                        "<div style='margin: 20px 0;'>" +
-                        "<p><strong>사용자 정보:</strong></p>" +
-                        "<ul>" +
-                        "<li>이름: " + savedUser.getName() + "</li>" +
-                        "<li>이메일: " + (savedUser.getEmail() != null ? savedUser.getEmail() : "제공되지 않음") + "</li>" +
-                        "</ul>" +
-                        "</div>" +
-                        "<div style='margin: 20px 0;'>" +
-                        "<p><strong>Access Token:</strong></p>" +
-                        "<textarea readonly style='width:100%; height:100px; font-family: monospace;'>" + accessToken + "</textarea>" +
-                        "</div>" +
-                        "<div style='margin: 20px 0;'>" +
-                        "<p><strong>Refresh Token:</strong></p>" +
-                        "<textarea readonly style='width:100%; height:100px; font-family: monospace;'>" + refreshToken + "</textarea>" +
-                        "</div>" +
-                        "<hr>" +
-                        "<div style='background: #f5f5f5; padding: 15px; border-radius: 5px;'>" +
-                        "<p><strong>API 테스트 방법:</strong></p>" +
-                        "<pre style='background: #333; color: #fff; padding: 10px; border-radius: 3px; overflow-x: auto;'>" +
-                        "curl -X GET http://localhost:8080/api/user/me \\\n" +
-                        "  -H \"Authorization: Bearer " + accessToken + "\"" +
-                        "</pre>" +
-                        "</div>" +
-                        "</body></html>"
-        );
-
-        // 프론트엔드가 준비되면 아래 코드로 변경
-        /*
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/login/callback")
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build()
                 .toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
-        */
     }
 }
