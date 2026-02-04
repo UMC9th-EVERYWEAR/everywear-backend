@@ -35,7 +35,7 @@ public class UserController {
 
     @Operation(
             summary = "약관 동의 토글",
-            description = "사용자의 약관 동의 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다."
+            description = "사용자의 약관 동의 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다. default값은 false입니다."
     )
     @PatchMapping("/agree")
     public ApiResponse<UserResponseDto.AgreeToggleResponse> toggleAgree(
@@ -52,7 +52,7 @@ public class UserController {
 
     @Operation(
             summary = "알림 설정 토글",
-            description = "사용자의 알림 설정 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다."
+            description = "사용자의 알림 설정 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다. default값은 ture입니다."
     )
     @PatchMapping("/alarm")
     public ApiResponse<UserResponseDto.AlarmToggleResponse> toggleAlarm(
