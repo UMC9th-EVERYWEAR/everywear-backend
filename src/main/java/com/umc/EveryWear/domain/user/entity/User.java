@@ -5,6 +5,7 @@ import com.umc.EveryWear.domain.user.enums.SocialType;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "user")
@@ -42,7 +43,8 @@ public class User extends BaseEntity {
     private Boolean isAgreed;
 
     @Column(name = "alarm_on", nullable = false)
-    private Boolean alarmOn;
+    @ColumnDefault("true")
+    private Boolean alarmOn = true;
 
     @Builder
     public User(Long userId, String oauthId, String name, String email,
