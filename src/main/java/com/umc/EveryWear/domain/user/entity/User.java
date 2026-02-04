@@ -5,6 +5,7 @@ import com.umc.EveryWear.domain.user.enums.SocialType;
 import com.umc.EveryWear.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "user")
@@ -41,13 +42,14 @@ public class User extends BaseEntity {
     @Column(name = "is_agreed", nullable = false)
     private Boolean isAgreed;
 
-    @Column(name = "alarm_onoff", nullable = false)
-    private Boolean alarmOnoff;
+    @Column(name = "alarm_on", nullable = false)
+    @ColumnDefault("true")
+    private Boolean alarmOn = true;
 
     @Builder
     public User(Long userId, String oauthId, String name, String email,
                 SocialType socialType, UserStatus isActive, String refreshToken,
-                Boolean isAgreed, Boolean alarmOnoff) {
+                Boolean isAgreed, Boolean alarmOn) {
         this.userId = userId;
         this.oauthId = oauthId;
         this.name = name;
@@ -56,7 +58,7 @@ public class User extends BaseEntity {
         this.isActive = isActive;
         this.refreshToken = refreshToken;
         this.isAgreed = isAgreed;
-        this.alarmOnoff = alarmOnoff;
+        this.alarmOn = alarmOn;
     }
 
     // Refresh Token 업데이트 메서드
@@ -67,5 +69,15 @@ public class User extends BaseEntity {
     // 사용자 상태 변경 메서드
     public void updateStatus(UserStatus status) {
         this.isActive = status;
+    }
+
+    // 약관 동의 토글 메서드
+    public void toggleAgree() {
+        this.isAgreed = !this.isAgreed;
+    }
+
+    // 알림 설정 토글 메서드
+    public void toggleAlarm() {
+        this.alarmOn = !this.alarmOn;
     }
 }

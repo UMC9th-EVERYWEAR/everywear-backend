@@ -69,7 +69,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .isActive(UserStatus.ACTIVE)
                     .refreshToken("")
                     .isAgreed(false)
-                    .alarmOnoff(true)
+                    .alarmOn(true)
                     .build();
 
             return userRepository.save(user);
@@ -93,7 +93,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .isActive(UserStatus.ACTIVE)
                     .refreshToken("")
                     .isAgreed(false)
-                    .alarmOnoff(true)
+                    .alarmOn(true)
                     .build();
 
             return userRepository.save(user);
