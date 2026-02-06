@@ -1,8 +1,12 @@
 package com.umc.EveryWear.domain.auth.service;
 
 import com.umc.EveryWear.domain.auth.dto.TokenRefreshResponse;
+import com.umc.EveryWear.domain.fitting.repository.FittingHistoryRepository;
 import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.enums.UserStatus;
+import com.umc.EveryWear.domain.user.repository.UserImgRepository;
+import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.global.security.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -17,6 +21,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -26,6 +31,9 @@ public class AuthService {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final UserImgRepository userImgRepository;
+    private final UserProductRepository userProductRepository;
+    private final FittingHistoryRepository fittingHistoryRepository;
 
     @Value("${kakao.admin-key}")
     private String kakaoAdminKey;
@@ -116,7 +124,19 @@ public class AuthService {
                     user.getSocialType(), user.getEmail(), e);
         }
 
-        // ✅ Hard Delete: DB에서 완전 삭제
+        // 1. UserImg 삭제
+        userImgRepository.deleteAllByUser_UserId(userId);
+
+        // 2. FittingHistory 삭제 (UserProduct를 통해 연결됨)
+        List<UserProduct> userProducts = userProductRepository.findAllByUser_UserId(userId);
+        for (UserProduct up : userProducts) {
+            fittingHistoryRepository.deleteAllByUserProduct(up);
+        }
+
+        // 3. UserProduct 삭제
+        userProductRepository.deleteAllByUser_UserId(userId);
+
+        // 4. user 삭제
         userRepository.delete(user);
 
         // 쿠키 삭제

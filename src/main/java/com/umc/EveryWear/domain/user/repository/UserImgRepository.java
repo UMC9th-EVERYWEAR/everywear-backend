@@ -18,4 +18,8 @@ public interface UserImgRepository extends JpaRepository<UserImg, Long> {
     Optional<UserImg> findByUserAndRepresentativeTrue(User user);
 
     Optional<UserImg> findByUser_UserIdAndProfileImageId(Long userId, Long imageId);
+    List<UserImg> findAllByUser(User user);
+
+    void deleteAllByUser_UserId(Long userId);
+
 }
