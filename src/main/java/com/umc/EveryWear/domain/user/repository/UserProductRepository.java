@@ -47,6 +47,8 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
     @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate")
     List<UserProduct> findAllByUpdatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
 
+    boolean existsByUser_UserIdAndProduct_ProductIdAndIsLikedTrue(Long userId, Long productId);
+
     List<UserProduct> findAllByUser_UserId(Long userId);
     void deleteAllByUser_UserId(Long userId);
 }

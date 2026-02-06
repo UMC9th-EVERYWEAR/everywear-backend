@@ -1,10 +1,12 @@
 package com.umc.EveryWear.domain.user.controller;
 
+import com.umc.EveryWear.domain.user.dto.res.UserImgResponseDto;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.exception.UserImgException;
 import com.umc.EveryWear.domain.user.exception.code.UserImgErrorCode;
 import com.umc.EveryWear.domain.user.exception.code.UserImgSuccessCode;
 import com.umc.EveryWear.domain.user.service.command.UserImgCommandService;
+import com.umc.EveryWear.domain.user.service.query.UserImgQueryService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +15,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user-images")
 @RequiredArgsConstructor
 public class UserImgController {
 
     private final UserImgCommandService userImgCommandService;
+    private final UserImgQueryService userImgQueryService;
 
     /**
      * 사용자 이미지 검증 및 저장 API
@@ -69,5 +74,34 @@ public class UserImgController {
                 UserImgSuccessCode.REPRESENTATIVE_IMAGE_UPDATED,
                 null
         );
+    }
+
+    /**
+     * 프로필 이미지 목록 조회
+     */
+    @Operation(
+            summary = "프로필 사진 조회 by 임준서(개발 완료)",
+            description = "사용자의 모든 프로필사진들을 조회합니다."
+    )
+    @GetMapping
+    public List<UserImgResponseDto.UserImgQuery> getProfileImages(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return userImgQueryService.getProfileImages(userId);
+    }
+
+    /**
+     * 프로필 이미지 삭제
+     */
+    @Operation(
+            summary = "프로필 사진 삭제 by 임준서(개발 완료)",
+            description = "사용자가 선택한 프로필사진을 삭제합니다."
+    )
+    @DeleteMapping("/{imageId}")
+    public void deleteProfileImage(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long imageId
+    ) {
+        userImgCommandService.deleteProfileImage(userId, imageId);
     }
 }

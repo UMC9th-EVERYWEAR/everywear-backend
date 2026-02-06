@@ -9,6 +9,7 @@ import com.umc.EveryWear.domain.user.exception.UserImgException;
 import com.umc.EveryWear.domain.user.exception.code.UserImgErrorCode;
 import com.umc.EveryWear.domain.user.repository.UserImgRepository;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
+import com.umc.EveryWear.global.s3.S3ImageDeleter;
 import com.umc.EveryWear.global.s3.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class UserImgCommandService {
     private final UserImgRepository userImgRepository;
     private final S3Uploader s3Uploader;
     private final UserRepository userRepository;
+    private final S3ImageDeleter s3ImageDeleter;
 
     /**
      * 사용자 이미지 검증 후 저장
@@ -104,5 +106,26 @@ public class UserImgCommandService {
 
         // 3. 새 대표 이미지 지정
         targetImg.makeRepresentative();
+    }
+
+    /**
+     * 유저 프로필 이미지 삭제
+     * - 대표 이미지는 삭제 불가
+     */
+    @Transactional
+    public void deleteProfileImage(Long userId, Long imageId) {
+        UserImg userImg = userImgRepository
+                .findByUser_UserIdAndProfileImageId(userId, imageId)
+                .orElseThrow(() -> new UserImgException(UserImgErrorCode.USER_IMAGE_NOT_FOUND));
+
+        if (userImg.isRepresentative()) {
+            throw new UserImgException(UserImgErrorCode.USER_REPRESENTATIVE_IMG_CANNOT_DELETE);
+        }
+
+        // S3 삭제
+        s3ImageDeleter.deleteByUrl(userImg.getImageUrl());
+
+        // DB 삭제
+        userImgRepository.delete(userImg);
     }
 }
