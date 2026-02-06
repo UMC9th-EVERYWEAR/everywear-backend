@@ -51,5 +51,4 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
 
     List<UserProduct> findAllByUser_UserId(Long userId);
     void deleteAllByUser_UserId(Long userId);
-    boolean existsByUser_UserIdAndProduct_ProductIdAndIsLikedTrue(Long userId, Long productId);
 }
