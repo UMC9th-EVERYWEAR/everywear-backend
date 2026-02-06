@@ -69,11 +69,11 @@ public class UserImgCommandService {
                 "user-profile"
         );
 
+        userImgRepository.lockAllByUserId(userId);
+
         // 4. 대표사진 여부 결정
         boolean hasRepresentative =
-                userImgRepository
-                        .findByUser_UserIdAndRepresentativeTrue(userId)
-                        .isPresent();
+                userImgRepository.existsByUser_UserIdAndRepresentativeTrue(userId);
 
         UserImg userImg = UserImg.builder()
                 .user(user)

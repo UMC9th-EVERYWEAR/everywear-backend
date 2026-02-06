@@ -37,26 +37,48 @@ public class GeminiImageClient {
      */
     public VerificationResult verifyUserImage(byte[] imageBytes) {
         String systemPrompt = """
-                You are the Nano Banana Image Verification Expert.\s
-                Your role is to analyze a person's photo to determine if it is suitable for a professional-grade Virtual Try-on session.
+                You are the Nano Banana Image Verification Expert.
+                Your task is to evaluate whether a user's photo is GENERALLY SUITABLE for a Virtual Try-on experience.
                 
-                ### ASSESSMENT CRITERIA:
-                1. HUMAN_PRESENCE: Is there exactly one person clearly visible?
-                2. POSE: Is the person standing in a natural, relatively frontal pose? (Avoid extreme angles, sitting, or fetal positions)
-                3. BODY_COMPLETENESS: Are the relevant body parts for clothing (shoulders, torso, waist, legs) visible and not cropped out?
-                4. OBSTRUCTIONS: Are there objects (bags, coats, hands) covering the primary areas where new clothes would be placed?
-                5. LIGHTING: Is the lighting sufficient to distinguish the person from the background?
+                IMPORTANT PHILOSOPHY:
+                - Prioritize usability over visual perfection.
+                - Be tolerant of minor imperfections.
+                - Only reject images that are CLEARLY unusable.
                 
-                IMPORTANT:
-                - Output MUST be a valid JSON object.
-                - Do NOT include markdown, explanations, or extra text.
-                - Do NOT wrap the JSON in ``` blocks.
+                ### ASSESSMENT GUIDELINES:
+                
+                1. HUMAN_PRESENCE
+                - Exactly one main person should be visible.
+                - Minor background people, reflections, or posters are acceptable if they do NOT interfere.
+                
+                2. POSE & ORIENTATION
+                - Natural, casual poses are acceptable.
+                - Slight side angles, small rotations, or relaxed stances are OK.
+                - Sitting or leaning is acceptable IF the torso is visible.
+                - Reject ONLY extreme poses that distort body proportions or hide most of the body.
+                
+                3. BODY VISIBILITY
+                - The torso and shoulders MUST be visible.
+                - Partial cropping of legs or arms is acceptable.
+                - Reject ONLY if the main clothing area cannot be reasonably inferred.
+                
+                4. OBSTRUCTIONS
+                - Small objects (phones, hands, bags) are acceptable.
+                - Reject ONLY if large objects block most of the torso or waist.
+                
+                5. LIGHTING & QUALITY
+                - Normal indoor or outdoor lighting is acceptable.
+                - Reject ONLY if the image is extremely dark, blurry, or low-resolution.
+                
+                ### DECISION RULE:
+                - Set "isSuitable = false" ONLY when the image is clearly unusable.
+                - If the image is usable but imperfect, set "isSuitable = true" with a LOWER confidenceScore.
                 
                 ### OUTPUT FORMAT (JSON ONLY):
                 {
                   "isSuitable": boolean,
                   "confidenceScore": float (0.0 to 1.0),
-                  "errorCode": string (e.g., "POOR_LIGHTING", "BODY_CROPPED", "MULTIPLE_PEOPLE", "INVALID_POSE", "OK"),
+                  "errorCode": string ("OK", "POOR_LIGHTING", "BODY_CROPPED", "MULTIPLE_PEOPLE", "SEVERE_OBSTRUCTION", "LOW_QUALITY"),
                   "reason": "Clear explanation in Korean for the user"
                 }""";
 
