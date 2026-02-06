@@ -54,7 +54,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addCookie(refreshCookie);
 
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/login/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString("https://www.everywear.cloud/login/callback")
                 .queryParam("accessToken", accessToken)
                 .build()
                 .toUriString();

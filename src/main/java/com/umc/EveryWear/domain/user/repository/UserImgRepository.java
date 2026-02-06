@@ -26,4 +26,8 @@ public interface UserImgRepository extends JpaRepository<UserImg, Long> {
     List<UserImg> lockAllByUserId(@Param("userId") Long userId);
 
     boolean existsByUser_UserIdAndRepresentativeTrue(Long userId);
+    List<UserImg> findAllByUser(User user);
+
+    void deleteAllByUser_UserId(Long userId);
+
 }

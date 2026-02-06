@@ -2,6 +2,7 @@ package com.umc.EveryWear.domain.fitting.repository;
 
 import com.umc.EveryWear.domain.fitting.entity.FittingHistory;
 import com.umc.EveryWear.domain.user.entity.User;
+import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,4 +43,7 @@ public interface FittingHistoryRepository extends JpaRepository<FittingHistory, 
      * 최근 6건 피팅내역 조회
      */
     List<FittingHistory> findTop6ByUserProduct_User_UserIdOrderByCreatedAtDesc(Long userId);
+
+    void deleteAllByUserProduct(UserProduct userProduct);
+
 }

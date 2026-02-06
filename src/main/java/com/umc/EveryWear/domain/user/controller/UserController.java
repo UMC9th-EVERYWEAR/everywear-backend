@@ -5,7 +5,6 @@ import com.umc.EveryWear.domain.user.exception.code.UserSuccessCode;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.domain.user.service.command.UserCommandService;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
-import com.umc.EveryWear.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
