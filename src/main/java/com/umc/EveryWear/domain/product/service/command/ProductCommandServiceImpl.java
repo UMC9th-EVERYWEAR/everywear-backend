@@ -42,7 +42,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final UserProductRepository userProductRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
-    
+
     @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
 
