@@ -43,6 +43,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
+        log.info("Request URL: {}", request.getRequestURL());
+        log.info("Query String: {}", request.getQueryString());
+        String savedRedirectUri = CookieUtils.getCookie(request, "redirect_uri")
+                .map(Cookie::getValue).orElse("null");
+        log.info("Saved Redirect URI in Cookie: {}", savedRedirectUri);
+
         // Refresh Token 업데이트
         User savedUser = userRepository.findById(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
