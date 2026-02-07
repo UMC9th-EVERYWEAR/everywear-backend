@@ -43,7 +43,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
 
-    @Value("${fastapi.base-url}")
+    @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
 
     private static final int CRAWL_TIMEOUT_SECONDS = 120;
