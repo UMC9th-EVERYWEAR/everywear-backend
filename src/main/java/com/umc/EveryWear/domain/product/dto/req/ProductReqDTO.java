@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.product.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -50,7 +51,7 @@ public class ProductReqDTO {
     @AllArgsConstructor
     public static class ImportWconceptDTO {
         @NotBlank(message = "상품 URL은 필수입니다.")
-        @Pattern(regexp = "^(https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*|https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*)$", message = "지원되지 않는 url 형식입니다")
+        @Pattern(regexp = "^(https://www\\.wconcept\\.co\\.kr/Product/\\d+(\\?.*)?|https://m\\.wconcept\\.co\\.kr/Product/\\d+(\\?.*)?)$", message = "지원되지 않는 url 형식입니다")
         @Schema(description = "W컨셉 상품 URL", example = "string")
         private String product_url;
     }
