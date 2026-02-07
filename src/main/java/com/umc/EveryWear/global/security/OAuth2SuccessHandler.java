@@ -46,15 +46,25 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // Refresh Token 업데이트 (Dirty Checking으로 자동 업데이트됨)
         savedUser.updateRefreshToken(refreshToken);
 
+        // 1. 리다이렉트 대상 URL 결정 (동적 처리)
+        String referer = request.getHeader("Referer");
+        String targetBaseUrl = "https://www.everywear.cloud/login/callback";
+
+        // 만약 프론트엔드 로컬(localhost:5173)에서 요청이 왔다면 대상 변경
+        if (referer != null && referer.contains("localhost:5173")) {
+            targetBaseUrl = "http://localhost:5173/login/callback";
+        }
+
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);   // 로컬은 false, HTTPS 운영은 true
+        boolean isSecure = targetBaseUrl.startsWith("https");
+        refreshCookie.setSecure(isSecure);
+
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
         response.addCookie(refreshCookie);
 
-
-        String targetUrl = UriComponentsBuilder.fromUriString("https://www.everywear.cloud/login/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString(targetBaseUrl)
                 .queryParam("accessToken", accessToken)
                 .build()
                 .toUriString();
