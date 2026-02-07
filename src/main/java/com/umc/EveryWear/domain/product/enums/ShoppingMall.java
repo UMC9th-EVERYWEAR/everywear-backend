@@ -23,8 +23,8 @@ public enum ShoppingMall {
                     || url.matches("^https://s\\.zigzag\\.kr/[A-Za-z0-9]+$");
             case CM29 -> url.matches("^https://www\\.29cm\\.co\\.kr/products/\\d+.*")
                     || url.matches("^https://29cm\\.onelink\\.me/.*$");
-            case WCONCEPT -> url.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+\\?.*")
-                    || url.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+\\?.*$");
+            case WCONCEPT -> url.matches("^https://www\\.wconcept\\.co\\.kr/Product/\\d+(\\?.*)?$")
+                    || url.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+(\\?.*)?$");
         };
     }
 }
