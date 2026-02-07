@@ -3,6 +3,7 @@ package com.umc.EveryWear.global.security;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
 import com.umc.EveryWear.domain.user.service.CustomOAuth2User;
+import com.umc.EveryWear.global.util.CookieUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
+import static com.umc.EveryWear.global.security.HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -23,6 +26,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Override
     @Transactional
@@ -39,40 +43,32 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        // DB에서 사용자를 다시 조회하여 Refresh Token 업데이트
+        // Refresh Token 업데이트
         User savedUser = userRepository.findById(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Refresh Token 업데이트 (Dirty Checking으로 자동 업데이트됨)
         savedUser.updateRefreshToken(refreshToken);
 
-        // 1. 리다이렉트 대상 URL 결정 (동적 처리)
-        String referer = request.getHeader("Referer");
-        String targetBaseUrl = "https://www.everywear.cloud/login/callback";
-        String backendDomain = "dev-app-alb-160354142.ap-northeast-2.elb.amazonaws.com";
+        // 1. 쿠키에서 리다이렉트 대상 URL 가져오기
+        String targetBaseUrl = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
+                .map(Cookie::getValue)
+                .orElse("https://www.everywear.cloud/login/callback"); // 쿠키 없으면 기본 배포 주소
 
-        // 만약 프론트엔드 로컬(localhost:5173)에서 요청이 왔다면 대상 변경
-        if (referer == null &&
-                referer.contains("localhost:5173") ||
-                referer.contains("localhost:8080") ||
-                referer.contains(backendDomain)) {
-
-            targetBaseUrl = "http://localhost:5173/login/callback";
-        }
-
+        // 2. 응답 쿠키 설정 (RefreshToken)
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
         refreshCookie.setHttpOnly(true);
-        boolean isSecure = targetBaseUrl.startsWith("https");
-        refreshCookie.setSecure(isSecure);
-
+        refreshCookie.setSecure(targetBaseUrl.startsWith("https"));
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
         response.addCookie(refreshCookie);
 
+        // 3. 최종 URL 생성
         String targetUrl = UriComponentsBuilder.fromUriString(targetBaseUrl)
                 .queryParam("accessToken", accessToken)
                 .build()
                 .toUriString();
+
+        // 4. 사용한 인증 쿠키 삭제
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
