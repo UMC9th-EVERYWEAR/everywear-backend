@@ -1,6 +1,7 @@
 package com.umc.EveryWear.global.config;
 
 import com.umc.EveryWear.domain.user.service.CustomOAuth2UserService;
+import com.umc.EveryWear.global.security.HttpCookieOAuth2AuthorizationRequestRepository; // 추가
 import com.umc.EveryWear.global.security.JwtAuthenticationFilter;
 import com.umc.EveryWear.global.security.OAuth2SuccessHandler;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,8 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    // 1. Repository 주입 추가
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -38,8 +41,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",                // ALB 헬스체크용
-                                "/health",          // 상세 헬스체크용
+                                "/",
+                                "/health",
                                 "/error",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
@@ -54,6 +57,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        // 2. authorizationEndpoint 설정 추가
+                        .authorizationEndpoint(authorization -> authorization
+                                .baseUri("/oauth2/authorization")
+                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                        )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
