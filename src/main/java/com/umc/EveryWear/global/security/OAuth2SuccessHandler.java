@@ -49,9 +49,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // 1. 리다이렉트 대상 URL 결정 (동적 처리)
         String referer = request.getHeader("Referer");
         String targetBaseUrl = "https://www.everywear.cloud/login/callback";
+        String backendDomain = "dev-app-alb-160354142.ap-northeast-2.elb.amazonaws.com";
 
         // 만약 프론트엔드 로컬(localhost:5173)에서 요청이 왔다면 대상 변경
-        if (referer != null && referer.contains("localhost:5173")) {
+        if (referer == null ||
+                referer.contains("localhost:5173") ||
+                referer.contains("localhost:8080") ||
+                referer.contains(backendDomain)) {
+
             targetBaseUrl = "http://localhost:5173/login/callback";
         }
 
