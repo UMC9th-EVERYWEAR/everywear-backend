@@ -52,7 +52,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String backendDomain = "dev-app-alb-160354142.ap-northeast-2.elb.amazonaws.com";
 
         // 만약 프론트엔드 로컬(localhost:5173)에서 요청이 왔다면 대상 변경
-        if (referer == null ||
+        if (referer == null &&
                 referer.contains("localhost:5173") ||
                 referer.contains("localhost:8080") ||
                 referer.contains(backendDomain)) {
