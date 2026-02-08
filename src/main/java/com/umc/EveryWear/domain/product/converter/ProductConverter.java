@@ -65,4 +65,23 @@ public class ProductConverter {
                 .is_liked(isLiked != null ? isLiked : false)
                 .build();
     }
+
+    public static ProductResDTO.ProductForFittingDTO toProductForFittingDTO(UserProduct userProduct) {
+        Product product = userProduct.getProduct();
+        Boolean isLiked = userProduct.getIsLiked();
+        return ProductResDTO.ProductForFittingDTO.builder()
+                .AI_review(product.getAiReview())
+                .brand_name(product.getBrandName())
+                .category(product.getCategory())
+                .is_liked(isLiked != null ? isLiked : false)
+                .price(product.getPrice())
+                .product_id(product.getProductId())
+                .product_img_url(product.getProductImgUrl())
+                .product_name(product.getProductName())
+                .product_num(product.getProductNum())
+                .product_url(product.getProductUrl())
+                .shoppingmale_name(product.getShoppingmallName())
+                .star_point(product.getStarPoint())
+                .build();
+    }
 }

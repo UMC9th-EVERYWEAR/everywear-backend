@@ -137,6 +137,19 @@ public class ProductController {
     }
 
     @Operation(
+            summary = "AI분석 화면 조회",
+            description = "AI분석 전, 사용자가 선택한 상품의 정보와 대표사진을 조회합니다."
+    )
+    @GetMapping("/products/{product_id}")
+    public ApiResponse<ProductResDTO.ProductForFittingResponse> getProductForFitting(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("product_id") Long productId
+    ) {
+        ProductResDTO.ProductForFittingResponse response = productQueryService.getProductForFitting(userId, productId);
+        return ApiResponse.onSuccess(ProductSuccessCode.PRODUCT_FITTING_200, response);
+    }
+
+    @Operation(
             summary = "상품 좋아요 토글",
             description = "특정 상품에 대한 사용자의 좋아요 상태를 토글합니다. 호출할 때마다 true/false가 반전됩니다."
     )
