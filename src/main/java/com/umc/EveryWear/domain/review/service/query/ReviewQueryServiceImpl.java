@@ -2,6 +2,7 @@ package com.umc.EveryWear.domain.review.service.query;
 
 import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.product.entity.ReviewKeyword;
+import com.umc.EveryWear.domain.product.enums.ReviewCrawlStatus;
 import com.umc.EveryWear.domain.product.exception.ProductException;
 import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.product.repository.ProductRepository;
@@ -39,8 +40,10 @@ public class ReviewQueryServiceImpl implements ReviewQueryService {
         String status;
         if (!reviews.isEmpty()) {
             status = "completed";
-        } else if (product.getReviewCrawlStatus() == null) {
+        } else if (product.getReviewCrawlStatus() == null || product.getReviewCrawlStatus() == ReviewCrawlStatus.PROCESSING) {
             status = "not_started";
+        } else if (product.getReviewCrawlStatus() == ReviewCrawlStatus.FAILED) {
+            status = "failed";
         } else {
             status = product.getReviewCrawlStatus().name().toLowerCase();
         }
