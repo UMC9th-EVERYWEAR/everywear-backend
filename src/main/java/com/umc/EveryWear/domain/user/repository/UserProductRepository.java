@@ -43,9 +43,9 @@ public interface UserProductRepository extends JpaRepository<UserProduct, Long> 
     @Query("UPDATE UserProduct up SET up.updatedAt = :updatedAt WHERE up.user.userId = :userId AND up.product.productId = :productId")
     void updateUpdatedAt(@Param("userId") Long userId, @Param("productId") Long productId, @Param("updatedAt") LocalDateTime updatedAt);
 
-    // 60일 경과된 UserProduct 조회
-    @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate")
-    List<UserProduct> findAllByUpdatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
+    // 60일 경과되고 is_liked가 false인 UserProduct 조회 (삭제 시 FittingHistory는 cascade로 함께 삭제)
+    @Query("SELECT up FROM UserProduct up WHERE up.updatedAt < :cutoffDate AND up.isLiked = false")
+    List<UserProduct> findAllByDelete(@Param("cutoffDate") LocalDateTime cutoffDate);
 
     boolean existsByUser_UserIdAndProduct_ProductIdAndIsLikedTrue(Long userId, Long productId);
 
