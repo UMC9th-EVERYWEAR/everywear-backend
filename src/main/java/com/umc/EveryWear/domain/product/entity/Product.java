@@ -50,7 +50,8 @@ public class Product extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "review_crawl_status")
-    private ReviewCrawlStatus reviewCrawlStatus;
+    @Builder.Default
+    private ReviewCrawlStatus reviewCrawlStatus = ReviewCrawlStatus.PENDING;
 
     // 상품 URL 업데이트 메서드
     public void updateProductUrl(String productUrl) {
