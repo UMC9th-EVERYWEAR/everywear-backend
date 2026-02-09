@@ -27,4 +27,13 @@ public enum ShoppingMall {
                     || url.matches("^https://m\\.wconcept\\.co\\.kr/Product/\\d+(\\?.*)?$");
         };
     }
+
+    // displayName(한글)으로 enum 조회
+    public static ShoppingMall fromDisplayName(String displayName) {
+        if (displayName == null) return null;
+        for (ShoppingMall m : values()) {
+            if (m.getDisplayName().equals(displayName)) return m;
+        }
+        return null;
+    }
 }

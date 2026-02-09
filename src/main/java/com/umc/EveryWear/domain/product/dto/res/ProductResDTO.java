@@ -1,6 +1,7 @@
 package com.umc.EveryWear.domain.product.dto.res;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,10 +31,17 @@ public class ProductResDTO {
         private Boolean isUrlUpdated;
     }
     
+    // 상품 등록/크롤링 응답. completed 시 product 채움, processing 시 job_id/estimated_time
     @Getter
     @Builder
+    @JsonPropertyOrder({"product", "estimated_time", "from_cache", "job_id", "status"})
     public static class ImportResult {
-        private ImportDTO dto;
+        private ImportDTO product;
+        private String estimated_time;
+        private Boolean from_cache;
+        private Long job_id;
+        private String status;
+        @JsonIgnore
         private ShoppingMall mall;
     }
 

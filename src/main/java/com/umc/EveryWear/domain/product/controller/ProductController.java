@@ -100,13 +100,33 @@ public class ProductController {
                     " • 쇼핑몰 앱 공유하기: https://29cm.onelink.me/1080201211/{공유코드}"
     )
     @PostMapping("/product/import")
-    public ApiResponse<ProductResDTO.ImportDTO> importProduct(
+    public ApiResponse<ProductResDTO.ImportResult> importProduct(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody ProductReqDTO.ImportDTO dto
     ) {
         ProductResDTO.ImportResult result = productCommandService.importProduct(userId, dto);
-        ProductSuccessCode successCode = getImportSuccessCode(result.getMall(), result.getDto());
-        return ApiResponse.onSuccess(successCode, result.getDto());
+        ProductSuccessCode successCode = "processing".equals(result.getStatus())
+                ? ProductSuccessCode.PRODUCT_CRAWL_STARTED
+                : getImportSuccessCode(result.getMall(), result.getProduct());
+        return ApiResponse.onSuccess(successCode, result);
+    }
+
+    @Operation(
+            summary = "상품 크롤링 상태 조회",
+            description = "상품 등록 시 status가 processing이면 job_id로 이 API를 주기적으로 호출하여 완료 여부를 확인합니다. completed 시 상품 데이터(dto)를 반환합니다."
+    )
+    @GetMapping("/product/import/status/{job_id}")
+    public ApiResponse<ProductResDTO.ImportResult> getImportStatus(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("job_id") Long jobId
+    ) {
+        ProductResDTO.ImportResult result = productCommandService.getImportStatus(userId, jobId);
+        ProductSuccessCode successCode = "completed".equals(result.getStatus())
+                ? ProductSuccessCode.PRODUCT_CRAWL_COMPLETED
+                : "failed".equals(result.getStatus())
+                ? ProductSuccessCode.PRODUCT_CRAWL_FAILED
+                : ProductSuccessCode.PRODUCT_CRAWL_STARTED;
+        return ApiResponse.onSuccess(successCode, result);
     }
 
     private ProductSuccessCode getImportSuccessCode(ShoppingMall mall, ProductResDTO.ImportDTO dto) {
