@@ -84,20 +84,10 @@ public class ProductResDTO {
         private Float star_point;
     }
 
-    // 대표 이미지 (피팅용 응답)
+    // 상품 단건 조회 응답
     @Getter
     @Builder
-    public static class RepresentativeImgDTO {
-        private Long profileImageId;
-        private String imageUrl;
-        private Boolean representative;
-    }
-
-    // 피팅용 상품 조회 응답 (product + representative_img)
-    @Getter
-    @Builder
-    public static class ProductForFittingResponse {
+    public static class ProductDetailResponse {
         private ProductForFittingDTO product;
-        private RepresentativeImgDTO representative_img;
     }
 }

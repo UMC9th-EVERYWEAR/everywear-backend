@@ -76,9 +76,22 @@ public class UserImgController {
         );
     }
 
-    /**
-     * 프로필 이미지 목록 조회
-     */
+    // 대표 이미지 조회
+    @Operation(
+            summary = "대표 이미지 조회",
+            description = "사용자의 대표사진을 조회합니다."
+    )
+    @GetMapping("/representative")
+    public ApiResponse<UserImgResponseDto.RepresentativeImgResponse> getRepresentativeImage(
+            @AuthenticationPrincipal Long userId
+    ) {
+        var img = userImgQueryService.getRepresentativeImage(userId);
+        UserImgResponseDto.RepresentativeImgResponse result =
+                new UserImgResponseDto.RepresentativeImgResponse(UserImgResponseDto.UserImgQuery.from(img));
+        return ApiResponse.onSuccess(UserImgSuccessCode.REPRESENTIVE_IMG_200, result);
+    }
+
+    // 프로필 이미지 목록 조회
     @Operation(
             summary = "프로필 사진 조회 by 임준서(개발 완료)",
             description = "사용자의 모든 프로필사진들을 조회합니다."
