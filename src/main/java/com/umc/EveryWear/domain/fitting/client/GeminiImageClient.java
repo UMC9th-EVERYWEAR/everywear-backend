@@ -7,7 +7,9 @@ import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+import com.umc.EveryWear.domain.fitting.dto.internal.TryOnFailureResult;
 import com.umc.EveryWear.domain.fitting.dto.internal.VerificationResult;
+import com.umc.EveryWear.domain.fitting.enums.FittingClientErrorType;
 import com.umc.EveryWear.domain.fitting.exception.FittingException;
 import com.umc.EveryWear.domain.fitting.exception.code.FittingErrorCode;
 import com.umc.EveryWear.global.s3.S3Uploader;
@@ -123,8 +125,35 @@ public class GeminiImageClient {
         byte[] personImageBytes = imageDownloader.download(userImageUrl);
         byte[] garmentImageBytes = imageDownloader.download(garmentImageUrl);
 
-        String systemInstruction =
-                "You are the Nano Banana Virtual Try-on Engine. Output ONLY the final rendered image.";
+        String systemInstruction = """
+                
+                You are a virtual try-on engine.
+                
+                First, check whether the given images are suitable for virtual try-on.
+                
+                If the images are NOT suitable, DO NOT generate an image.
+                Instead, return a JSON object with the following format:
+                
+                {
+                  "success": false,
+                  "clientErrorType": "INVALID_USER_IMAGE" | "INVALID_PRODUCT_IMAGE",
+                  "reason": "Explain clearly in Korean why try-on is not possible."
+                }
+                
+                Rules:
+                - INVALID_USER_IMAGE:
+                  Use this when the person's image is unsuitable
+                  (poor lighting, body not visible, multiple people, severe obstruction).
+                
+                - INVALID_PRODUCT_IMAGE:
+                  Use this when the garment image itself is unsuitable
+                  (garment not visible, wrong cropping, unclear product).
+                
+                If the images ARE suitable:
+                - Generate the final try-on image.
+                - Output ONLY the final image.
+                - Do NOT include any text or JSON in the successful case.
+                """;
 
         try {
             GenerateContentConfig config = GenerateContentConfig.builder()
@@ -146,12 +175,25 @@ public class GeminiImageClient {
                             config
                     );
 
+            // 실패(JSON) 먼저 체크
+            String text = response.text();
+            if (text != null && text.trim().startsWith("{")) {
+                TryOnFailureResult fail =
+                        objectMapper.readValue(text, TryOnFailureResult.class);
+
+                throw new FittingException(
+                        FittingErrorCode.AI_GENERATION_FAILED,
+                        FittingClientErrorType.valueOf(fail.getClientErrorType())
+                );
+            }
+
+            // 성공(IMAGE)
             byte[] resultImageBytes =
                     response.parts().stream()
                     .flatMap(p -> p.inlineData().stream())
                     .findFirst()
                     .map(d -> d.data().get())
-                    .orElseThrow(() -> new FittingException(FittingErrorCode.AI_RESPONSE_EMPTY));
+                    .orElseThrow(() -> new FittingException(FittingErrorCode.AI_RESPONSE_EMPTY, FittingClientErrorType.UNKNOWN_ERROR));
             return s3Uploader.upload(resultImageBytes, "fitting-result");
 
         } catch (FittingException e) {

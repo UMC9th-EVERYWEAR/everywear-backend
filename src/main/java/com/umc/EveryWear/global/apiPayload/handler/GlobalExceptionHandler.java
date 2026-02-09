@@ -1,5 +1,6 @@
 package com.umc.EveryWear.global.apiPayload.handler;
 
+import com.umc.EveryWear.domain.fitting.exception.FittingException;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import com.umc.EveryWear.global.apiPayload.code.BaseErrorCode;
 import com.umc.EveryWear.global.apiPayload.code.GeneralErrorCode;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 전역 예외 처리 클래스
@@ -46,6 +48,23 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(GeneralErrorCode.VALID_FAIL.getStatus())
                 .body(ApiResponse.onFailure(GeneralErrorCode.VALID_FAIL, errorMessage));
+    }
+
+    /**
+     * 피팅 도메인 예외 - 프론트로 AI 실패 원인 errorType 내려주기 위함
+     */
+    @ExceptionHandler(FittingException.class)
+    public ResponseEntity<ApiResponse<?>> handleFittingException(
+            FittingException ex
+    ) {
+        return ResponseEntity
+                .status(ex.getCode().getStatus())
+                .body(ApiResponse.onFailure(
+                        ex.getCode(),
+                        Map.of(
+                                "errorType", ex.getClientErrorType().name()
+                        )
+                ));
     }
 
     // 그 외의 정의되지 않은 모든 예외 처리

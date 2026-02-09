@@ -35,7 +35,7 @@ public class FittingCommandService {
             Long userId,
             Long productId
     ) {
-// 1. UserProduct 조회
+        // 1. UserProduct 조회
         UserProduct userProduct = userProductRepository
                 .findByUser_UserIdAndProduct_ProductId(userId, productId)
                 .orElseThrow(() ->

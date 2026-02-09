@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum FittingErrorCode implements BaseErrorCode {
 
-
     INVALID_USER_IMAGE(
             HttpStatus.BAD_REQUEST,
             "FITTING400_1",
