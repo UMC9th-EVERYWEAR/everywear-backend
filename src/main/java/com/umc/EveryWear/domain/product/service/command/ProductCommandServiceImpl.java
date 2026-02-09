@@ -92,7 +92,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     : null;
 
             if (existingByNum != null) {
-                existingByNum.updateProductUrl(productUrl);
+                existingByNum.updateProductUrl(crawlerData.getProductUrl());
                 Product updated = productRepository.save(existingByNum);
                 return resolveOrLinkUserProduct(userId, user, updated, true);
             }
