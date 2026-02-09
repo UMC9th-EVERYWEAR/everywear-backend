@@ -72,6 +72,9 @@ public enum ProductSuccessCode implements BaseSuccessCode {
     PRODUCT_LIKE_DISABLED(HttpStatus.OK,
             "PRODUCT221",
             "상품 좋아요가 성공적으로 비활성화되었습니다."),
+    PRODUCT_FITTING_200(HttpStatus.OK,
+            "PRODUCT230",
+            "단건 상품을 조회했습니다."),
     ;
 
     private final HttpStatus status;

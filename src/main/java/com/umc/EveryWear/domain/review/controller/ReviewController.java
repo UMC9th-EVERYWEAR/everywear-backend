@@ -91,6 +91,7 @@ public class ReviewController {
                     description = "리뷰 크롤링 시작됨 (백그라운드 처리 중)",
                     content = @Content(
                             mediaType = "application/json",
+                            schema = @Schema(implementation = ReviewResDTO.CrawlResponseDTO.class), // 스키마 추가
                             examples = @ExampleObject(value = """
                                     {
                                       "isSuccess": true,
@@ -112,6 +113,7 @@ public class ReviewController {
                     description = "상품을 찾을 수 없음",
                     content = @Content(
                             mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class), // 스키마 추가
                             examples = @ExampleObject(value = """
                                     {
                                       "isSuccess": false,
@@ -186,7 +188,8 @@ public class ReviewController {
                     description = "리뷰 조회 성공 (크롤링 완료)",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(value = """
+                            schema = @Schema(implementation = ReviewResDTO.ReviewListDTO.class), // 스키마 추가
+                            examples = @ExampleObject(name = "조회 성공 예시", value = """
                                     {
                                       "isSuccess": true,
                                       "code": "REVIEW200_1",
@@ -212,11 +215,12 @@ public class ReviewController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
+                    responseCode = "200", // 동일 코드 분리 표시는 설명으로 구분
                     description = "크롤링 진행 중",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(value = """
+                            schema = @Schema(implementation = ReviewResDTO.ReviewListDTO.class), // 스키마 추가
+                            examples = @ExampleObject(name = "진행 중 예시", value = """
                                     {
                                       "isSuccess": true,
                                       "code": "REVIEW200_2",

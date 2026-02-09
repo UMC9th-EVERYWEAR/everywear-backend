@@ -2,6 +2,8 @@ package com.umc.EveryWear.domain.product.service.query;
 
 import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
+import com.umc.EveryWear.domain.product.exception.ProductException;
+import com.umc.EveryWear.domain.product.exception.code.ProductErrorCode;
 import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,16 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     public ProductResDTO.ProductListResponse getProductsByCategory(Long userId, String category) {
         List<UserProduct> userProducts = userProductRepository.findAllByUserIdAndCategoryOrderByUpdatedAtDesc(userId, category);
         return toProductListResponse(userProducts);
+    }
+
+    @Override
+    public ProductResDTO.ProductDetailResponse getProductDetail(Long userId, Long productId) {
+        UserProduct userProduct = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, productId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        ProductResDTO.ProductForFittingDTO productDto = ProductConverter.toProductForFittingDTO(userProduct);
+        return ProductResDTO.ProductDetailResponse.builder()
+                .product(productDto)
+                .build();
     }
 
     private static ProductResDTO.ProductListResponse toProductListResponse(List<UserProduct> userProducts) {

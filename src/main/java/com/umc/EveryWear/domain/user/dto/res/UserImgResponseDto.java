@@ -17,4 +17,9 @@ public class UserImgResponseDto {
             );
         }
     }
+
+    // 대표 이미지 단건 조회 응답
+    public record RepresentativeImgResponse(UserImgQuery representative_img) {
+        
+    }
 }

@@ -1,9 +1,11 @@
 package com.umc.EveryWear.domain.fitting.controller;
 
+import com.umc.EveryWear.domain.fitting.dto.req.FittingRequestDto;
 import com.umc.EveryWear.domain.fitting.dto.res.FittingResponseDto;
 import com.umc.EveryWear.domain.fitting.exception.code.FittingSuccessCode;
 import com.umc.EveryWear.domain.fitting.service.command.FittingCommandService;
 import com.umc.EveryWear.domain.fitting.service.query.FittingQueryService;
+import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +29,14 @@ public class FittingController {
             summary = "가상 피팅 by 임준서(개발 완료)",
             description = "사용자의 대표사진에 상품 사진을 피팅합니다"
     )
-    @PostMapping("/{product_id}/try-on")
+    @PostMapping("/try-on")
     public ApiResponse<FittingResponseDto.FittingApplyResult> requestFitting(
             @AuthenticationPrincipal Long userId,
-            @PathVariable("product_id") Long productId
+            @RequestBody FittingRequestDto.FittingRequest request
     ) {
         FittingResponseDto.FittingApplyResult result = fittingCommandService.requestFitting(
                 userId,
-                productId
+                request.productId()
         );
 
         return ApiResponse.onSuccess(

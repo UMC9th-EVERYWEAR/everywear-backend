@@ -65,4 +65,29 @@ public class ProductResDTO {
     public static class ProductListResponse {
         private java.util.List<ListDTO> products;
     }
+
+    // 피팅용 상품 상세 (상품 정보 + 대표 이미지)
+    @Getter
+    @Builder
+    public static class ProductForFittingDTO {
+        private String AI_review;
+        private String brand_name;
+        private String category;
+        private Boolean is_liked;
+        private String price;
+        private Long product_id;
+        private String product_img_url;
+        private String product_name;
+        private Long product_num;
+        private String product_url;
+        private String shoppingmale_name;
+        private Float star_point;
+    }
+
+    // 상품 단건 조회 응답
+    @Getter
+    @Builder
+    public static class ProductDetailResponse {
+        private ProductForFittingDTO product;
+    }
 }
