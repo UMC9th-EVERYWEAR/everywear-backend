@@ -17,7 +17,11 @@ public enum UserImgSuccessCode implements BaseSuccessCode {
     REPRESENTATIVE_IMAGE_UPDATED(
             HttpStatus.OK,
             "USERIMG200_1",
-            "대표사진이 성공적으로 변경되었습니다.")
+            "대표사진이 성공적으로 변경되었습니다."),
+    REPRESENTIVE_IMG_200(
+            HttpStatus.OK,
+            "REPRESENTIVE_IMG_200",
+            "사용자의 대표사진 조회에 성공합니다.")
     ;
 
     private final HttpStatus status;

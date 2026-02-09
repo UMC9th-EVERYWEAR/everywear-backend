@@ -137,15 +137,15 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "AI분석 화면 조회",
-            description = "AI분석 전, 사용자가 선택한 상품의 정보와 대표사진을 조회합니다."
+            summary = "상품 단건 조회",
+            description = "사용자가 선택한 상품의 정보를 조회합니다."
     )
     @GetMapping("/products/{product_id}")
-    public ApiResponse<ProductResDTO.ProductForFittingResponse> getProductForFitting(
+    public ApiResponse<ProductResDTO.ProductDetailResponse> getProductDetail(
             @AuthenticationPrincipal Long userId,
             @PathVariable("product_id") Long productId
     ) {
-        ProductResDTO.ProductForFittingResponse response = productQueryService.getProductForFitting(userId, productId);
+        ProductResDTO.ProductDetailResponse response = productQueryService.getProductDetail(userId, productId);
         return ApiResponse.onSuccess(ProductSuccessCode.PRODUCT_FITTING_200, response);
     }
 
