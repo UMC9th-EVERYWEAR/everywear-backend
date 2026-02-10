@@ -6,7 +6,7 @@ import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 
 public class ClosetConverter {
 
-    public static ClosetResDTO.ProductDTO toProductDTO(UserProduct userProduct) {
+    public static ClosetResDTO.ProductDTO toProductDTO(UserProduct userProduct, Long recentFittingId) {
         Product product = userProduct.getProduct();
         return ClosetResDTO.ProductDTO.builder()
                 .AI_review(product.getAiReview())
@@ -21,6 +21,7 @@ public class ClosetConverter {
                 .product_url(product.getProductUrl())
                 .shoppingmale_name(product.getShoppingmallName())
                 .star_point(product.getStarPoint())
+                .recent_fitting_id(recentFittingId)
                 .build();
     }
 }

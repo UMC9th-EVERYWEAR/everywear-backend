@@ -46,4 +46,9 @@ public interface FittingHistoryRepository extends JpaRepository<FittingHistory, 
 
     void deleteAllByUserProduct(UserProduct userProduct);
 
+    Optional<FittingHistory> findTop1ByUserProduct_User_UserIdAndUserProduct_Product_ProductIdOrderByUpdatedAtDesc(
+            Long userId,
+            Long productId
+    );
+
 }

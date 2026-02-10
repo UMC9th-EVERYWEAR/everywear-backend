@@ -24,6 +24,7 @@ public class ClosetResDTO {
         private String product_url;
         private String shoppingmale_name;
         private Float star_point;
+        private Long recent_fitting_id;
     }
 
     @Getter
