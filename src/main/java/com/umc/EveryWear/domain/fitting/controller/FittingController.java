@@ -79,4 +79,19 @@ public class FittingController {
                 fittingQueryService.getFittingDetail(userId, fittingId)
         );
     }
+
+    @Operation(
+            summary = "상품별 최근 피팅 조회",
+            description = "특정 상품(productId)에 대해 현재 사용자(userId)의 가장 최근 피팅 1건을 조회합니다."
+    )
+    @GetMapping("/latest")
+    public ApiResponse<FittingResponseDto.FittingApplyResult> getLatestFittingByProduct(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam Long productId
+    ) {
+        return ApiResponse.onSuccess(
+                FittingSuccessCode.FITTING_LATEST_FETCHED,
+                fittingQueryService.getLatestFittingByProduct(userId, productId)
+        );
+    }
 }

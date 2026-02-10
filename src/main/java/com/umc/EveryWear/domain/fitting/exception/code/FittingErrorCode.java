@@ -87,12 +87,6 @@ public enum FittingErrorCode implements BaseErrorCode {
             "FITTING500_3",
             "가상 피팅 이미지 생성에 실패했습니다."
     ),
-
-    INTERNAL_ERROR(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "FITTING500_9",
-            "알 수 없는 오류가 발생했습니다."
-    ),
     AI_RESPONSE_INVALID_FORMAT(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "FITTING500_10",
