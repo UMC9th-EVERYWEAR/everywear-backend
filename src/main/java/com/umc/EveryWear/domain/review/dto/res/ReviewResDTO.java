@@ -17,26 +17,6 @@ public class ReviewResDTO {
 
     @Getter
     @Builder
-    @Schema(description = "리뷰 크롤링 응답 DTO")
-    public static class CrawlResponseDTO {
-        @Schema(description = "크롤링 상태", example = "processing", allowableValues = {"processing", "completed", "failed"})
-        private String status;
-
-        @Schema(description = "예상 소요 시간", example = "30초")
-        private String estimated_time;
-
-        @Schema(description = "캐시 데이터 반환 여부", example = "false")
-        private Boolean from_cache;
-
-        @Schema(description = "총 리뷰 개수", example = "0")
-        private Integer total_count;
-
-        @Schema(description = "조회된 리뷰 목록")
-        private List<ReviewDTO> reviews;
-    }
-
-    @Getter
-    @Builder
     @Schema(description = "리뷰 목록 조회 응답 DTO")
     public static class ReviewListDTO {
         @Schema(description = "크롤링 상태", example = "completed")

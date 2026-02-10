@@ -39,22 +39,21 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
     private final OpenAiService openAiService;
 
     @Override
-    public ReviewResDTO.CrawlResponseDTO startReviewCrawling(ReviewReqDTO.CrawlReviewDTO dto) {
+    public ReviewResDTO.ReviewListDTO startReviewCrawling(ReviewReqDTO.CrawlReviewDTO dto) {
         Long productId = dto.getProduct_id();
 
         // 1. Product 조회
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ReviewException(ReviewErrorCode.PRODUCT_NOT_FOUND));
 
-        // 2. 리뷰가 이미 존재하는지 확인
+        // 2. 리뷰가 이미 존재하는지 확인 (캐시 반환)
         if (reviewRepository.existsByProduct_ProductId(productId)) {
             List<Review> reviews = reviewRepository.findByProduct_ProductId(productId);
             List<ReviewResDTO.ReviewDTO> reviewDTOs = reviews.stream()
                     .map(ReviewResDTO.ReviewDTO::from)
                     .toList();
 
-            return ReviewResDTO.CrawlResponseDTO.builder()
-                    .from_cache(true)
+            return ReviewResDTO.ReviewListDTO.builder()
                     .status("completed")
                     .total_count(reviews.size())
                     .reviews(reviewDTOs)
@@ -63,9 +62,8 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
 
         // 3. 이미 크롤링 중인지 확인
         if (product.getReviewCrawlStatus() == ReviewCrawlStatus.PROCESSING) {
-            return ReviewResDTO.CrawlResponseDTO.builder()
+            return ReviewResDTO.ReviewListDTO.builder()
                     .status("processing")
-                    .from_cache(false)
                     .total_count(0)
                     .reviews(List.of())
                     .build();
@@ -92,10 +90,8 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
                         error -> log.error("리뷰 크롤링 요청 실패: productId={}, error={}", productId, error.getMessage())
                 );
 
-        return ReviewResDTO.CrawlResponseDTO.builder()
+        return ReviewResDTO.ReviewListDTO.builder()
                 .status("processing")
-                .estimated_time("30초")
-                .from_cache(false)
                 .total_count(0)
                 .reviews(List.of())
                 .build();

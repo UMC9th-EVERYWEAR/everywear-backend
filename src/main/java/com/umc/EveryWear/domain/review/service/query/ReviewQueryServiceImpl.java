@@ -40,12 +40,10 @@ public class ReviewQueryServiceImpl implements ReviewQueryService {
         String status;
         if (!reviews.isEmpty()) {
             status = "completed";
-        } else if (product.getReviewCrawlStatus() == null || product.getReviewCrawlStatus() == ReviewCrawlStatus.PROCESSING) {
-            status = "not_started";
-        } else if (product.getReviewCrawlStatus() == ReviewCrawlStatus.FAILED) {
-            status = "failed";
         } else {
-            status = product.getReviewCrawlStatus().name().toLowerCase();
+            status = product.getReviewCrawlStatus() == null
+                    ? "pending"
+                    : product.getReviewCrawlStatus().name().toLowerCase();
         }
 
         List<ReviewResDTO.ReviewDTO> reviewDTOs = reviews.stream()
