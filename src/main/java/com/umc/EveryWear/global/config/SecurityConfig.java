@@ -51,8 +51,8 @@ public class SecurityConfig {
                                 "/login/**",
                                 "/auth/**",
                                 "/api/auth/refresh",
-                                "/oauth/callback/**",
-                                "/api/review/crawl"
+                                "/oauth/callback/**"
+                                //"/api/review/crawl"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
