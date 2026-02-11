@@ -45,7 +45,7 @@ public class Product extends BaseEntity {
     @Column(name = "AI_review", columnDefinition = "TEXT")
     private String aiReview;
 
-    @Column(name = "product_num")
+    @Column(name = "product_num", unique = true)
     private Long productNum;
 
     @Enumerated(EnumType.STRING)

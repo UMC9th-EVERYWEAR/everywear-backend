@@ -72,7 +72,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         return ProductResDTO.ImportResult.builder().dto(result).mall(mall).build();
     }
 
-    // 쇼핑몰 공통 import: URL 검증-기존 상품 처리-크롤링-신규 저장을 단계별 메서드로 위임
+    // 쇼핑몰 공통 import: URL 검증-기존 상품 처리-크롤링-신규 저장 (동기용, 기존 URL 있을 때만 사용하지 않고 직접 import 시 사용)
     private ProductResDTO.ImportDTO doImportByMall(Long userId, String productUrl, ShoppingMall mall) {
         try {
             User user = userRepository.findById(userId)
@@ -92,7 +92,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                     : null;
 
             if (existingByNum != null) {
-                existingByNum.updateProductUrl(productUrl);
+                existingByNum.updateProductUrl(crawlerData.getProductUrl());
                 Product updated = productRepository.save(existingByNum);
                 return resolveOrLinkUserProduct(userId, user, updated, true);
             }
