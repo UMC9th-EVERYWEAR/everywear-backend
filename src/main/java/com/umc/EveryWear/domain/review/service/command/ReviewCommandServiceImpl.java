@@ -46,8 +46,8 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ReviewException(ReviewErrorCode.PRODUCT_NOT_FOUND));
 
-        // 2. 리뷰가 이미 존재하는지 확인 (캐시 반환)
-        if (reviewRepository.existsByProduct_ProductId(productId)) {
+        // 2. 리뷰 크롤링을 완료한적이 있는지 확인 (캐시 반환)
+        if (product.getReviewCrawlStatus() == ReviewCrawlStatus.COMPLETED) {
             List<Review> reviews = reviewRepository.findByProduct_ProductId(productId);
             List<ReviewResDTO.ReviewDTO> reviewDTOs = reviews.stream()
                     .map(ReviewResDTO.ReviewDTO::from)

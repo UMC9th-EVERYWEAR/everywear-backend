@@ -31,28 +31,31 @@ public class ReviewQueryServiceImpl implements ReviewQueryService {
 
     @Override
     public ReviewResDTO.ReviewListDTO getReviews(Long productId) {
-        // Product 조회
+        // 1. Product 조회 (상태값을 확인하기 위해 필요)
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ReviewException(ReviewErrorCode.PRODUCT_NOT_FOUND));
 
-        List<Review> reviews = reviewRepository.findByProduct_ProductId(productId);
+        ReviewCrawlStatus statusEnum = product.getReviewCrawlStatus();
 
-        String status;
-        if (!reviews.isEmpty()) {
-            status = "completed";
+        // 상태 문자열 결정 (null이거나 PENDING이면 "pending"으로 표시)
+        String statusStr = (statusEnum != null) ? statusEnum.name().toLowerCase() : "pending";
+
+        List<ReviewResDTO.ReviewDTO> reviewDTOs;
+
+        // 2. 로직 수정: 오직 'COMPLETED' 상태일 때만 리뷰 데이터를 조회함
+        if (ReviewCrawlStatus.COMPLETED.equals(statusEnum)) {
+            List<Review> reviews = reviewRepository.findByProduct_ProductId(productId);
+            reviewDTOs = reviews.stream()
+                    .map(ReviewResDTO.ReviewDTO::from)
+                    .toList();
         } else {
-            status = product.getReviewCrawlStatus() == null
-                    ? "pending"
-                    : product.getReviewCrawlStatus().name().toLowerCase();
+            // 3. 그 외의 상태(pending, processing, failed)라면 DB 조회 없이 바로 빈 리스트 반환
+            reviewDTOs = List.of();
         }
 
-        List<ReviewResDTO.ReviewDTO> reviewDTOs = reviews.stream()
-                .map(ReviewResDTO.ReviewDTO::from)
-                .toList();
-
         return ReviewResDTO.ReviewListDTO.builder()
-                .status(status)
-                .total_count(reviews.size())
+                .status(statusStr)
+                .total_count(reviewDTOs.size())
                 .reviews(reviewDTOs)
                 .build();
     }
