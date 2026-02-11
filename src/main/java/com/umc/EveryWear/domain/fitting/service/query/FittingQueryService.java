@@ -9,6 +9,7 @@ import com.umc.EveryWear.domain.user.entity.UserImg;
 import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.service.query.UserImgQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,6 +81,23 @@ public class FittingQueryService {
                         up.getProduct().getProductName(),
                         up.getIsLiked()
                 )
+        );
+    }
+
+    // 특정 상품에 대한 가장 최근 피팅 결과 조회
+    public FittingResponseDto.FittingApplyResult getLatestFittingByProduct(Long userId, Long productId) {
+        List<FittingHistory> list =
+                fittingHistoryRepository.findLatestByUserIdAndProductId(userId, productId, PageRequest.of(0, 1));
+
+        if (list.isEmpty()) {
+            throw new FittingException(FittingErrorCode.FITTING_HISTORY_NOT_FOUND);
+        }
+
+        FittingHistory fh = list.get(0);
+
+        return new FittingResponseDto.FittingApplyResult(
+                fh.getFittingId(),
+                fh.getFittingResultImage()
         );
     }
 }
