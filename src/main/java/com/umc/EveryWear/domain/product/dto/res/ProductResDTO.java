@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.umc.EveryWear.domain.product.enums.ShoppingMall;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 public class ProductResDTO {
 
