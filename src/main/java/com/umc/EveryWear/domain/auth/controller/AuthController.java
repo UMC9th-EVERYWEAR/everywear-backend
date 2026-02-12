@@ -28,6 +28,18 @@ public class AuthController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, result);
     }
 
+    @Operation(summary = "AccessToken 재발급 (스웨거 테스트용)", description = "리프레시 토큰을 직접 파라미터로 넣어 엑세스 토큰을 재발급받습니다.")
+    @PostMapping("/refresh/test")
+    public ApiResponse<TokenRefreshResponse> refreshTest(
+            @RequestParam("refreshToken") String refreshToken,
+            HttpServletResponse response
+    ) {
+        // 공통 로직 호출
+        TokenRefreshResponse result = authService.processRefresh(refreshToken, response);
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, result);
+    }
+
+
     @Operation(summary = "로그아웃", description = "사용자를 로그아웃하고 RefreshToken을 무효화합니다.")
     @PostMapping("/logout")
     public ApiResponse<String> logout(
