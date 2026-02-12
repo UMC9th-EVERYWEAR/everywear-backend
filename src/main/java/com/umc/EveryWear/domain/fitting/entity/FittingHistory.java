@@ -1,5 +1,6 @@
 package com.umc.EveryWear.domain.fitting.entity;
 
+import com.umc.EveryWear.domain.fitting.enums.FittingStatus;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.product.entity.Product;
 import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
@@ -26,6 +27,25 @@ public class FittingHistory extends BaseEntity {
 
     @Column(name = "fitting_result_image")
     private String fittingResultImage;
+
+    @Enumerated(EnumType.STRING)
+    private FittingStatus status;
+
+    private String failReason;
+
+    public void markProcessing() {
+        this.status = FittingStatus.PROCESSING;
+    }
+
+    public void complete(String imageUrl) {
+        this.fittingResultImage = imageUrl;
+        this.status = FittingStatus.COMPLETED;
+    }
+
+    public void fail(String reason) {
+        this.failReason = reason;
+        this.status = FittingStatus.FAILED;
+    }
 
     public void applyFittingResult(String imageUrl) {
         this.fittingResultImage = imageUrl;
