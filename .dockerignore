@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# GitHub
+.github
+
+# Gradle
+.gradle
+build
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ
+.idea
+*.iws
+*.iml
+*.ipr
+out
+
+# OS
+.DS_Store
+
+# Documentation
+*.md
+HELP.md
+
+# Test
+src/test
+
+# Terraform
+infra
+*.tf
+*.tfvars
+.terraform
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
