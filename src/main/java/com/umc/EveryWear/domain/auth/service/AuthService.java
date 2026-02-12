@@ -39,11 +39,10 @@ public class AuthService {
     private String kakaoAdminKey;
 
     /**
-     * refreshToken(쿠키) -> 검증 -> accessToken 재발급
-     * + refreshToken도 회전(rotate)해서 DB/쿠키 업데이트 (권장)
+     * [공통 로직] refreshToken 문자열을 받아 검증 후 새 토큰들 발급
      */
     @Transactional
-    public TokenRefreshResponse refresh(String refreshToken, HttpServletResponse response) {
+    public TokenRefreshResponse processRefresh(String refreshToken, HttpServletResponse response) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new IllegalArgumentException("Refresh token is missing.");
         }
@@ -56,26 +55,33 @@ public class AuthService {
         // 2) 토큰에서 userId 추출
         Long userId = jwtUtil.getUserIdFromToken(refreshToken);
 
-        // 3) DB 조회 + 저장된 refreshToken과 일치하는지 확인 (중요!)
+        // 3) DB 조회 + 저장된 refreshToken과 일치하는지 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (user.getRefreshToken() == null || !user.getRefreshToken().equals(refreshToken)) {
-            // 탈취/재사용 방어
             throw new IllegalArgumentException("Refresh token does not match.");
         }
 
         // 4) 새 토큰 발급
         String newAccessToken = jwtUtil.generateAccessToken(user);
-
-        // (권장) refresh token 회전
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
-        user.updateRefreshToken(newRefreshToken); // Dirty checking으로 저장
 
-        // 5) refreshToken 쿠키로 내려주기 (HttpOnly)
+        // 5) DB 업데이트
+        user.updateRefreshToken(newRefreshToken);
+
+        // 6) 쿠키 업데이트 (테스트용 API 호출 시에도 브라우저 쿠키를 동기화해줌)
         setRefreshTokenCookie(response, newRefreshToken);
 
         return new TokenRefreshResponse(newAccessToken);
+    }
+
+    /**
+     * 기존 쿠키 방식 (프론트 운영용)
+     */
+    @Transactional
+    public TokenRefreshResponse refresh(String refreshToken, HttpServletResponse response) {
+        return processRefresh(refreshToken, response);
     }
 
     /**

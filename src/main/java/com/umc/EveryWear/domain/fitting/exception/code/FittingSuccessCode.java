@@ -73,7 +73,12 @@ public enum FittingSuccessCode implements BaseSuccessCode {
             "좋아요한 피팅 목록 조회에 성공했습니다."
     ),
 
+    FITTING_LATEST_FETCHED(
+            HttpStatus.OK,
+            "FITTING200_8",
+            "최신 피팅 결과 조회에 성공했습니다.")
     ;
+
     private final HttpStatus status;
     private final String code;
     private final String message;

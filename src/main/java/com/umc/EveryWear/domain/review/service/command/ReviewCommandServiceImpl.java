@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.umc.EveryWear.domain.product.enums.ReviewCrawlStatus.COMPLETED;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,8 +48,8 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ReviewException(ReviewErrorCode.PRODUCT_NOT_FOUND));
 
-        // 2. 리뷰가 이미 존재하는지 확인 (캐시 반환)
-        if (reviewRepository.existsByProduct_ProductId(productId)) {
+        // 2. 리뷰 크롤링을 완료한적이 있는지 확인 (캐시 반환)
+        if (product.getReviewCrawlStatus() == COMPLETED) {
             List<Review> reviews = reviewRepository.findByProduct_ProductId(productId);
             List<ReviewResDTO.ReviewDTO> reviewDTOs = reviews.stream()
                     .map(ReviewResDTO.ReviewDTO::from)
@@ -107,14 +109,28 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + productId));
 
+        // 기존에 AI 리뷰가 존재하면 재생성하지 않고 반환
+        if (product.getAiReview() != null && !product.getAiReview().isBlank()) {
+            List<String> keywords = reviewKeywordRepository.findByProduct(product).stream()
+                    .map(ReviewKeyword::getKeywordName)
+                    .toList();
+            return ReviewResDTO.AiReviewDTO.builder()
+                    .summary(product.getAiReview())
+                    .keywords(keywords)
+                    .message("기존 AI 리뷰를 반환합니다.")
+                    .build();
+        }
+
         // 2. 해당 상품의 모든 리뷰 내용 조회
         List<String> reviewContents = reviewRepository.findReviewContentsByProductId(productId);
 
+        // 리뷰 없는 경우
         if (reviewContents.isEmpty()) {
             log.info("상품 ID {}에 대한 리뷰가 없습니다.", productId);
             return ReviewResDTO.AiReviewDTO.builder()
                     .summary(null)
                     .keywords(List.of())
+                    .message("INSUFFICIENT_REVIEWS")
                     .build();
         }
 

@@ -3,6 +3,7 @@ package com.umc.EveryWear.domain.fitting.repository;
 import com.umc.EveryWear.domain.fitting.entity.FittingHistory;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -51,4 +52,19 @@ public interface FittingHistoryRepository extends JpaRepository<FittingHistory, 
             Long productId
     );
 
+    // 특정 사용자와 상품에 대한 최신 피팅내역 조회 (페이징 적용)
+    @Query("""
+    select fh
+    from FittingHistory fh
+    join fh.userProduct up
+    join up.product p
+    where up.user.userId = :userId
+      and p.productId = :productId
+    order by fh.createdAt desc
+""")
+    List<FittingHistory> findLatestByUserIdAndProductId(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId,
+            Pageable pageable
+    );
 }
