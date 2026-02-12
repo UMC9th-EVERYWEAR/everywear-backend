@@ -110,16 +110,7 @@ public class ProductController {
     }
 
     private ProductSuccessCode getImportSuccessCode(ShoppingMall mall, ProductResDTO.ImportDTO dto) {
-        boolean urlUpdated = Boolean.TRUE.equals(dto.getIsUrlUpdated());
         boolean updated = Boolean.TRUE.equals(dto.getIsUpdated());
-        if (urlUpdated) {
-            return switch (mall) {
-                case MUSINSA -> ProductSuccessCode.MUSINSA_PRODUCT_URL_UPDATED;
-                case ZIGZAG -> ProductSuccessCode.ZIGZAG_PRODUCT_URL_UPDATED;
-                case CM29 -> ProductSuccessCode.CM29_PRODUCT_URL_UPDATED;
-                case WCONCEPT -> ProductSuccessCode.WCONCEPT_PRODUCT_URL_UPDATED;
-            };
-        }
         if (updated) {
             return switch (mall) {
                 case MUSINSA -> ProductSuccessCode.MUSINSA_PRODUCT_UPDATED;

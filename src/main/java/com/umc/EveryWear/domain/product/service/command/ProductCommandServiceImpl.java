@@ -25,12 +25,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
+import org.springframework.dao.DataIntegrityViolationException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 @Slf4j
 @Service
@@ -44,10 +51,15 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final WebClient webClient;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
 
     private static final int CRAWL_TIMEOUT_SECONDS = 120;
+    private static final int REDIRECT_RESOLVE_TIMEOUT_SECONDS = 10;
+    private static final int PRODUCT_NUM_TOTAL_LENGTH = 15;
 
     private ShoppingMall detectShoppingMall(String url) {
         if (url == null) return null;
@@ -73,7 +85,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         return ProductResDTO.ImportResult.builder().dto(result).mall(mall).build();
     }
 
-    // 쇼핑몰 공통 import: URL 검증-기존 상품 처리-크롤링-신규 저장 (동기용, 기존 URL 있을 때만 사용하지 않고 직접 import 시 사용)
+    // 쇼핑몰 공통 import
     private ProductResDTO.ImportDTO doImportByMall(Long userId, String productUrl, ShoppingMall mall) {
         try {
             User user = userRepository.findById(userId)
@@ -82,26 +94,38 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 throw new ProductException(ProductErrorCode.INVALID_URL_FORMAT);
             }
 
-            Product existingByUrl = productRepository.findByProductUrl(productUrl).orElse(null);
-            if (existingByUrl != null) {
-                return resolveOrLinkUserProduct(userId, user, existingByUrl, false);
+            // 1. 리다이렉트가 필요하면 최종 URL 확보
+            String finalUrl = resolveRedirect(productUrl);
+
+            // 2. 최종 URL에서 상품 고유 번호(product_num) 추출
+            Long productNum = extractProductNumFromFinalUrl(finalUrl, mall);
+
+            // 3. product_num으로 DB 존재 여부 판단
+            if (productNum != null) {
+                Product existingByNum = productRepository.findByProductNum(productNum).orElse(null);
+                if (existingByNum != null) {
+                    // DB에 있으면 크롤링 없이 user_product에만 연결
+                    return resolveOrLinkUserProduct(userId, user, existingByNum, true);
+                }
             }
 
+            // 4. DB에 없으면 크롤링 후 상품 저장 및 user_product 연결
             ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
-            // 리다이렉트된 최종 URL을 쇼핑몰별 정규화 URL로 변환
             String canonicalUrl = canonicalizeProductUrl(crawlerData.getProductUrl(), mall);
             crawlerData.setProductUrl(canonicalUrl);
-            Product existingByNum = crawlerData.getProductNum() != null
-                    ? productRepository.findByProductNum(crawlerData.getProductNum()).orElse(null)
-                    : null;
-
-            if (existingByNum != null) {
-                existingByNum.updateProductUrl(crawlerData.getProductUrl());
-                Product updated = productRepository.save(existingByNum);
-                return resolveOrLinkUserProduct(userId, user, updated, true);
+            try {
+                return createProductAndLink(user, crawlerData);
+            } catch (DataIntegrityViolationException e) {
+                // product_num 중복(동시 등록 등)
+                if (isDuplicateProductNumConstraint(e)) {
+                    // 직전 flush에서 실패한 엔티티들이 다시 flush되지 않도록 영속성 컨텍스트 초기화
+                    if (entityManager != null) {
+                        entityManager.clear();
+                    }
+                    return handleDuplicateProductNum(userId, user, crawlerData.getProductNum());
+                }
+                throw e;
             }
-
-            return createProductAndLink(user, crawlerData);
         } catch (ProductException e) {
             throw e;
         } catch (Exception e) {
@@ -110,18 +134,113 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-    // 기존 Product에 대한 UserProduct 연결 또는 updatedAt 갱신 후 ImportDTO 반환
-    private ProductResDTO.ImportDTO resolveOrLinkUserProduct(Long userId, User user, Product product, boolean isUrlUpdated) {
+    // product_num 유니크 제약 위반인지 판별
+    private static boolean isDuplicateProductNumConstraint(DataIntegrityViolationException e) {
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            String msg = cause.getMessage();
+            if (msg != null && (msg.contains("uq_product_product_num") || msg.contains("Duplicate entry") && msg.contains("product_num"))) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    //product_num 중복 시
+    private ProductResDTO.ImportDTO handleDuplicateProductNum(Long userId, User user, Long productNum) {
+        Product existing = productRepository.findByProductNum(productNum)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
+        productRepository.updateUpdatedAt(existing.getProductId());
+        return resolveOrLinkUserProduct(userId, user, existing, true);
+    }
+
+    // 요청 URL을 리다이렉트한 최종 URL로 변환
+    private String resolveRedirect(String url) {
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .connectTimeout(Duration.ofSeconds(REDIRECT_RESOLVE_TIMEOUT_SECONDS))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
+
+            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            URI finalUri = response.uri();
+            return finalUri != null ? finalUri.toString() : url;
+        } catch (Exception e) {
+            log.warn("리다이렉트 확인 실패, 원본 URL 사용: {} - {}", url, e.getMessage());
+            return url;
+        }
+    }
+
+    // 최종 URL에서 상품 ID를 파싱한 뒤, DB 저장 형식으로 변환
+    private Long extractProductNumFromFinalUrl(String finalUrl, ShoppingMall mall) {
+        if (finalUrl == null || mall == null) return null;
+        try {
+            String path = new URI(finalUrl).getPath();
+            if (path == null) return null;
+
+            Long rawId = null;
+            int prefixDigit;
+            switch (mall) {
+                case MUSINSA:
+                    rawId = extractProductId(path, "/products/");
+                    prefixDigit = 1;
+                    break;
+                case ZIGZAG:
+                    rawId = extractProductId(path, "/catalog/products/");
+                    if (rawId == null) rawId = extractProductId(path, "/p/");
+                    prefixDigit = 2;
+                    break;
+                case WCONCEPT:
+                    rawId = extractProductId(path, "/Product/");
+                    if (rawId == null) rawId = extractProductId(path, "/product/");
+                    prefixDigit = 4;
+                    break;
+                case CM29:
+                    rawId = extractProductId(path, "/products/");
+                    prefixDigit = 3;
+                    break;
+                default:
+                    return null;
+            }
+            if (rawId == null) return null;
+            return formatProductNum(rawId, prefixDigit);
+        } catch (Exception e) {
+            log.warn("상품 번호 추출 실패 (mall: {}, url: {}): {}", mall, finalUrl, e.getMessage());
+            return null;
+        }
+    }
+
+    // 크롤러와 동일한 15자리 product_num 형식으로 포맷
+    private static Long formatProductNum(long productId, int prefixDigit) {
+        String idStr = String.valueOf(productId);
+        int zerosNeeded = PRODUCT_NUM_TOTAL_LENGTH - 1 - idStr.length();
+        if (zerosNeeded < 0) return productId;
+        String formatted = prefixDigit + "0".repeat(zerosNeeded) + idStr;
+        try {
+            return Long.parseLong(formatted);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // 기존 Product에 대한 UserProduct 연결 또는 updatedAt 갱신 후 ImportDTO 반환 (PRODUCT202용)
+    private ProductResDTO.ImportDTO resolveOrLinkUserProduct(Long userId, User user, Product product, boolean isUpdated) {
         UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, product.getProductId()).orElse(null);
         if (up == null) {
             UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(product).build());
-            return ProductConverter.toImportDTO(saved, true, isUrlUpdated);
+            return ProductConverter.toImportDTO(saved, isUpdated, false);
         }
         userProductRepository.updateUpdatedAt(userId, product.getProductId(), LocalDateTime.now());
-        return ProductConverter.toImportDTO(up, true, isUrlUpdated);
+        return ProductConverter.toImportDTO(up, isUpdated, false);
     }
 
-    // 크롤링 데이터로 Product와 UserProduct 생성 후 ImportDTO 반환
+    // 크롤링 데이터로 Product와 UserProduct 생성 후 ImportDTO 반환 (PRODUCT201용)
     private ProductResDTO.ImportDTO createProductAndLink(User user, ProductCrawlingData data) {
         Product product = Product.builder()
                 .shoppingmallName(data.getShoppingmallName())
@@ -137,7 +256,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 .build();
         Product savedProduct = productRepository.save(product);
         UserProduct savedUp = userProductRepository.save(UserProduct.builder().user(user).product(savedProduct).build());
-        return ProductConverter.toImportDTO(savedUp);
+        return ProductConverter.toImportDTO(savedUp, false, false);
     }
 
     @Override
