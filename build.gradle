@@ -75,6 +75,9 @@ dependencies {
 
 	// S3 Client
 	implementation "software.amazon.awssdk:s3"
+
+	// SQS
+	implementation "software.amazon.awssdk:sqs"
 }
 
 
