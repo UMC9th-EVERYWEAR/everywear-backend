@@ -97,10 +97,12 @@ public class UserImgController {
             description = "사용자의 모든 프로필사진들을 조회합니다."
     )
     @GetMapping
-    public List<UserImgResponseDto.UserImgQuery> getProfileImages(
+    public ApiResponse<List<UserImgResponseDto.UserImgQuery>> getProfileImages(
             @AuthenticationPrincipal Long userId
     ) {
-        return userImgQueryService.getProfileImages(userId);
+        return ApiResponse.onSuccess(
+                UserImgSuccessCode.USER_IMG_LIST_FETCHED,
+                userImgQueryService.getProfileImages(userId));
     }
 
     /**
@@ -111,10 +113,11 @@ public class UserImgController {
             description = "사용자가 선택한 프로필사진을 삭제합니다."
     )
     @DeleteMapping("/{imageId}")
-    public void deleteProfileImage(
+    public ApiResponse<Void> deleteProfileImage(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long imageId
     ) {
         userImgCommandService.deleteProfileImage(userId, imageId);
+        return ApiResponse.onSuccess(UserImgSuccessCode.USER_IMG_DELETED, null);
     }
 }
