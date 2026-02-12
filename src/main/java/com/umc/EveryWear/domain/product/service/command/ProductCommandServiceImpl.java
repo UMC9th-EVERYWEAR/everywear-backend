@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.net.URI;
 
 @Slf4j
 @Service
@@ -87,6 +88,9 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
 
             ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
+            // 리다이렉트된 최종 URL을 쇼핑몰별 정규화 URL로 변환
+            String canonicalUrl = canonicalizeProductUrl(crawlerData.getProductUrl(), mall);
+            crawlerData.setProductUrl(canonicalUrl);
             Product existingByNum = crawlerData.getProductNum() != null
                     ? productRepository.findByProductNum(crawlerData.getProductNum()).orElse(null)
                     : null;
@@ -239,6 +243,84 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             try { return Long.parseLong(n.asText()); } catch (NumberFormatException e) { return null; }
         }
         return null;
+    }
+
+    // 정규화 URL 생성
+    private String canonicalizeProductUrl(String url, ShoppingMall mall) {
+        if (url == null || mall == null) return url;
+
+        try {
+            URI uri = new URI(url);
+            String path = uri.getPath(); // 쿼리스트링이 제거된 순수 path
+            if (path == null) return url;
+
+            switch (mall) {
+                case MUSINSA: {
+                    Long id = extractProductId(path, "/products/");
+                    if (id != null) {
+                        return "https://www.musinsa.com/products/" + id;
+                    }
+                    break;
+                }
+                case ZIGZAG: {
+                    // Case1: https://zigzag.kr/catalog/products/{id}
+                    Long id = extractProductId(path, "/catalog/products/");
+                    if (id != null) {
+                        return "https://zigzag.kr/catalog/products/" + id;
+                    }
+                    // Case2: https://zigzag.kr/p/{id}
+                    id = extractProductId(path, "/p/");
+                    if (id != null) {
+                        return "https://zigzag.kr/p/" + id;
+                    }
+                    break;
+                }
+                case WCONCEPT: {
+                    // m.wconcept / www.wconcept 모두 /Product/{id} 형태로 정규화
+                    Long id = extractProductId(path, "/Product/");
+                    if (id == null) {
+                        id = extractProductId(path, "/product/");
+                    }
+                    if (id != null) {
+                        return "https://www.wconcept.co.kr/Product/" + id;
+                    }
+                    break;
+                }
+                case CM29: {
+                    Long id = extractProductId(path, "/products/");
+                    if (id != null) {
+                        return "https://www.29cm.co.kr/products/" + id;
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("상품 URL 정규화 실패 (mall: {}, url: {}): {}",
+                    mall != null ? mall.name() : "null", url, e.getMessage());
+        }
+
+        // 패턴에 맞지 않으면 원본 URL 유지
+        return url;
+    }
+
+    // path 문자열에서 prefix 뒤에 이어지는 숫자 부분을 상품 ID로 파싱한다.
+    // 예) path = "/products/3073492?xxx", prefix="/products/" -> 3073492
+    private static Long extractProductId(String path, String prefix) {
+        int idx = path.indexOf(prefix);
+        if (idx < 0) return null;
+
+        int start = idx + prefix.length();
+        int end = start;
+        while (end < path.length() && Character.isDigit(path.charAt(end))) {
+            end++;
+        }
+        if (end == start) return null; // 숫자가 하나도 없으면 실패
+
+        try {
+            return Long.parseLong(path.substring(start, end));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
