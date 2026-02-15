@@ -90,7 +90,7 @@ jobs:
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            FASTAPI_BASE_URL=http://crawler.everywear.local:8001
+            FASTAPI_BASE_URL=${{ secrets.FASTAPI_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
