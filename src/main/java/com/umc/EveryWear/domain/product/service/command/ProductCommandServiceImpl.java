@@ -26,6 +26,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.dao.DataIntegrityViolationException;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -33,6 +34,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 @Slf4j
 @Service
@@ -51,6 +53,16 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     @Value("${FASTAPI_BASE_URL}")
     private String fastApiBaseUrl;
+
+    @Value("${product.import.max-concurrent-crawls:3}")
+    private int maxConcurrentCrawls;
+
+    private Semaphore crawlSemaphore;
+
+    @PostConstruct
+    void initCrawlSemaphore() {
+        this.crawlSemaphore = new Semaphore(Math.max(1, maxConcurrentCrawls));
+    }
 
     private static final int CRAWL_TIMEOUT_SECONDS = 120;
 
@@ -103,21 +115,31 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             }
 
             // 4. DB에 없으면 크롤링 후 상품 저장 및 user_product 연결
-            ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
-            String canonicalUrl = ProductUrlUtil.canonicalizeProductUrl(crawlerData.getProductUrl(), mall);
-            crawlerData.setProductUrl(canonicalUrl);
             try {
-                return createProductAndLink(user, crawlerData);
-            } catch (DataIntegrityViolationException e) {
-                // product_num 중복(동시 등록 등)
-                if (isDuplicateProductNumConstraint(e)) {
-                    // 직전 flush에서 실패한 엔티티들이 다시 flush되지 않도록 영속성 컨텍스트 초기화
-                    if (entityManager != null) {
-                        entityManager.clear();
+                crawlSemaphore.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("상품 import 대기 중 인터럽트: {}", e.getMessage());
+                throw new ProductException(ProductErrorCode.CRAWLING_FAILED);
+            }
+            try {
+                ProductCrawlingData crawlerData = crawlProduct(productUrl, mall);
+                String canonicalUrl = ProductUrlUtil.canonicalizeProductUrl(crawlerData.getProductUrl(), mall);
+                crawlerData.setProductUrl(canonicalUrl);
+                try {
+                    return createProductAndLink(user, crawlerData);
+                } catch (DataIntegrityViolationException e) {
+                    // product_num 중복(동시 등록 등)
+                    if (isDuplicateProductNumConstraint(e)) {
+                        if (entityManager != null) {
+                            entityManager.clear();
+                        }
+                        return handleDuplicateProductNum(userId, user, crawlerData.getProductNum());
                     }
-                    return handleDuplicateProductNum(userId, user, crawlerData.getProductNum());
+                    throw e;
                 }
-                throw e;
+            } finally {
+                crawlSemaphore.release();
             }
         } catch (ProductException e) {
             throw e;
@@ -215,7 +237,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 .is_liked(saved.getIsLiked())
                 .build();
     }
-  
+
     // 쇼핑몰별 크롤링 공통 호출
     private ProductCrawlingData crawlProduct(String url, ShoppingMall mall) {
         try {
