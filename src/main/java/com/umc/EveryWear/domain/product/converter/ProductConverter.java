@@ -6,22 +6,6 @@ import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 
 public class ProductConverter {
 
-    public static ProductResDTO.ImportDTO toImportDTO(Product product) {
-        return toImportDTO(product, false);
-    }
-
-    public static ProductResDTO.ImportDTO toImportDTO(Product product, boolean isUpdated) {
-        return toImportDTO(product, isUpdated, false);
-    }
-
-    public static ProductResDTO.ImportDTO toImportDTO(Product product, boolean isUpdated, boolean isUrlUpdated) {
-        return buildImportDTO(product, false, isUpdated, isUrlUpdated);
-    }
-
-    public static ProductResDTO.ImportDTO toImportDTO(UserProduct userProduct) {
-        return toImportDTO(userProduct, false, false);
-    }
-
     public static ProductResDTO.ImportDTO toImportDTO(UserProduct userProduct, boolean isUpdated, boolean isUrlUpdated) {
         return buildImportDTO(userProduct.getProduct(), userProduct.getIsLiked(), isUpdated, isUrlUpdated);
     }

@@ -19,11 +19,10 @@ public class ProductUrlUtil {
     // 요청 URL을 리다이렉트한 최종 URL로 변환한다.
     // 리다이렉트가 없거나 실패하면 원본 URL을 그대로 반환한다.
     public static String resolveRedirect(String url) {
-        try {
-            HttpClient client = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.ALWAYS)
-                    .connectTimeout(Duration.ofSeconds(REDIRECT_RESOLVE_TIMEOUT_SECONDS))
-                    .build();
+        try (HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .connectTimeout(Duration.ofSeconds(REDIRECT_RESOLVE_TIMEOUT_SECONDS))
+                .build()) {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -128,7 +127,7 @@ public class ProductUrlUtil {
                 }
             }
         } catch (Exception e) {
-            log.warn("상품 URL 정규화 실패 (mall: {}, url: {}): {}", mall != null ? mall.name() : "null", url, e.getMessage());
+            log.warn("상품 URL 정규화 실패 (mall: {}, url: {}): {}", mall.name(), url, e.getMessage());
         }
 
         // 패턴에 맞지 않으면 원본 URL 유지
