@@ -73,10 +73,6 @@ kakao:
 fastapi:
   base-url: ${FASTAPI_BASE_URL}
 
-product:
-  import:
-    max-concurrent-crawls: 3
-
 openai:
   api-key: ${OPENAI_API_KEY}
   model: gpt-4o-mini
