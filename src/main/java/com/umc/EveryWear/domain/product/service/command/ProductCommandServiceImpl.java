@@ -2,7 +2,6 @@ package com.umc.EveryWear.domain.product.service.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.umc.EveryWear.domain.product.converter.ProductConverter;
 import com.umc.EveryWear.domain.product.dto.req.ProductReqDTO;
 import com.umc.EveryWear.domain.product.dto.res.ProductResDTO;
 import com.umc.EveryWear.domain.product.entity.Product;
@@ -14,10 +13,8 @@ import com.umc.EveryWear.domain.user.entity.mapping.UserProduct;
 import com.umc.EveryWear.domain.user.repository.UserProductRepository;
 import com.umc.EveryWear.domain.user.entity.User;
 import com.umc.EveryWear.domain.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
-import lombok.Getter;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -31,7 +28,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -39,10 +35,10 @@ import java.util.concurrent.Semaphore;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ProductCommandServiceImpl implements ProductCommandService {
 
     private final ProductRepository productRepository;
+    private final ProductImportTransactionService productImportTransactionService;
     private final UserRepository userRepository;
     private final UserProductRepository userProductRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -110,7 +106,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 Product existingByNum = productRepository.findByProductNum(productNum).orElse(null);
                 if (existingByNum != null) {
                     // DB에 있으면 크롤링 없이 user_product에만 연결
-                    return resolveOrLinkUserProduct(userId, user, existingByNum);
+                    return productImportTransactionService.inUserProduct(userId, user, existingByNum);
                 }
             }
 
@@ -127,14 +123,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
                 String canonicalUrl = ProductUrlUtil.canonicalizeProductUrl(crawlerData.getProductUrl(), mall);
                 crawlerData.setProductUrl(canonicalUrl);
                 try {
-                    return createProductAndLink(user, crawlerData);
+                    return productImportTransactionService.createProductAndUserProduct(user, crawlerData);
                 } catch (DataIntegrityViolationException e) {
                     // product_num 중복(동시 등록 등)
                     if (isDuplicateProductNumConstraint(e)) {
                         if (entityManager != null) {
                             entityManager.clear();
                         }
-                        return handleDuplicateProductNum(userId, user, crawlerData.getProductNum());
+                        return productImportTransactionService.inProductNum(userId, user, crawlerData.getProductNum());
                     }
                     throw e;
                 }
@@ -162,50 +158,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         return false;
     }
 
-    //product_num 중복 시
-    private ProductResDTO.ImportDTO handleDuplicateProductNum(Long userId, User user, Long productNum) {
-        Product existing = productRepository.findByProductNum(productNum)
-                .orElseThrow(() -> new ProductException(ProductErrorCode.CRAWLING_FAILED));
-        productRepository.updateUpdatedAt(existing.getProductId());
-        return resolveOrLinkUserProduct(userId, user, existing);
-    }
-
-    // 기존 Product에 대한 UserProduct 연결 또는 updatedAt 갱신 후 ImportDTO 반환 (PRODUCT202용)
-    private ProductResDTO.ImportDTO resolveOrLinkUserProduct(Long userId, User user, Product product) {
-        UserProduct up = userProductRepository.findByUser_UserIdAndProduct_ProductId(userId, product.getProductId()).orElse(null);
-        if (up == null) {
-            UserProduct saved = userProductRepository.save(UserProduct.builder().user(user).product(product).build());
-            return ProductConverter.toImportDTO(saved, true, false);
-        }
-        userProductRepository.updateUpdatedAt(userId, product.getProductId(), LocalDateTime.now());
-        return ProductConverter.toImportDTO(up, true, false);
-    }
-
-    // 크롤링 데이터로 Product와 UserProduct 생성 후 ImportDTO 반환 (PRODUCT201용)
-    private ProductResDTO.ImportDTO createProductAndLink(User user, ProductCrawlingData data) {
-        Product product = Product.builder()
-                .shoppingmallName(data.getShoppingmallName())
-                .productUrl(data.getProductUrl())
-                .category(data.getCategory())
-                .productImgUrl(data.getProductImgUrl())
-                .productName(data.getProductName())
-                .brandName(data.getBrandName())
-                .price(data.getPrice())
-                .starPoint(data.getStarPoint())
-                .aiReview(data.getAiReview())
-                .productNum(data.getProductNum())
-                .build();
-        Product savedProduct = productRepository.save(product);
-        UserProduct savedUp = userProductRepository.save(UserProduct.builder().user(user).product(savedProduct).build());
-        return ProductConverter.toImportDTO(savedUp, false, false);
-    }
-
     @Override
     public ProductResDTO.ImportDTO importMusinsaProduct(Long userId, ProductReqDTO.ImportMusinsaDTO dto) {
         return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.MUSINSA);
     }
 
     @Override
+    @Transactional
     public ProductResDTO.LikeToggleDTO toggleProductLike(Long userId, Long productId) {
         // 상품 존재 여부 검증
         Product product = productRepository.findById(productId)
@@ -318,22 +277,5 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     @Override
     public ProductResDTO.ImportDTO importWconceptProduct(Long userId, ProductReqDTO.ImportWconceptDTO dto) {
         return doImportByMall(userId, dto.getProduct_url(), ShoppingMall.WCONCEPT);
-    }
-
-    // 크롤링 데이터를 담는 내부 클래스
-    @Setter
-    @Getter
-    private static class ProductCrawlingData {
-        private String shoppingmallName;
-        private String productUrl;
-        private String category;
-        private String productImgUrl;
-        private String productName;
-        private String brandName;
-        private String price;
-        private Float starPoint;
-        private String aiReview;
-        private Long productNum;
-
     }
 }
