@@ -3,21 +3,18 @@
 EveryWear Backend는 외부 쇼핑몰 상품을 연동 및 관리하고, AI 가상 피팅과 리뷰 분석을 위한 데이터를 제공하는 **Spring Boot 기반 REST API 서버**입니다.
 
 ## 👥 Team
----
 | BE(팀장) | BE | BE | BE |
 | :---: | :---: | :---: | :---: |
 | <img src="https://github.com/junjunseo.png" width="150" height="150"/> | <img src="https://github.com/2ivii.png" width="150" height="150"/> | <img src="https://github.com/whiteys1.png" width="150" height="150"/> | <img src="https://github.com/taerimiiii.png" width="150" height="150"/> |
 | 임준서<br/><a href="https://github.com/junjunseo">@junjunseo</a> | 윤정민<br/><a href="https://github.com/2ivii">@2ivii</a> | 신영섭<br/><a href="https://github.com/whiteys1">@whiteys</a> | 김태림<br/><a href="https://github.com/taerimiiii">@taerimiiii</a> |
 
 ## 💻 Tech Stack
----
 - **Framework/Language**: Spring Boot 3.x, Java 21
 - **Build/Database**: Gradle, MySQL, Spring Data JPA
 - **AI & Security**: Gemini API (Gemini 2.5 Flash, gemini-3-pro-preview, gemini-3-pro-image-preview), OpenAI API (GPT-4o), JWT 기반 소셜 로그인
 - **Docs**: Swagger (SpringDoc)
 
 ## **📂 Project Structure**
----
 도메인형 (Domain-driven)
 ```
 everywear-backend/
@@ -58,12 +55,10 @@ everywear-backend/
 ```
 
 ## **🛠️ Architecture**
----
 <img width="1005" height="541" alt="스크린샷 2026-02-12 오후 7 13 10" src="https://github.com/user-attachments/assets/37592b38-da0f-4187-9cc1-c7bd93f18fc6" />
 
 
 ## **📝 Commit Convention**
----
 | type | 의미 | 예시 |
 | --- | --- | --- |
 | ✨ **feat** | 새로운 기능 | 로그인 API 구현 |
